@@ -1,0 +1,108 @@
+#!/bin/bash
+export APP_HOME=$(pwd -P)
+export PROJECT_DIR=${APP_HOME#*/src/}
+export APP_NAME=$(basename $APP_HOME)
+export X_OS_TYPE=$(uname)
+GOPATH=${GOPATH#:}
+
+echo '[1] pulling 3rd-party package'
+deps=(
+github.com/Shopify/sarama
+github.com/Shopify/toxiproxy/client
+github.com/coreos/etcd/client
+github.com/coreos/etcd/pkg/pathutil
+github.com/coreos/etcd/pkg/testutil
+github.com/coreos/etcd/pkg/types
+github.com/coreos/etcd/version
+github.com/coreos/go-semver/semver
+github.com/davecgh/go-spew/spew
+github.com/davecgh/go-spew/spew/testdata
+github.com/eapache/go-resiliency/breaker
+github.com/eapache/go-resiliency/retrier
+github.com/eapache/go-xerial-snappy
+github.com/eapache/queue
+github.com/facebookgo/clock
+github.com/facebookgo/grace/gracehttp
+github.com/facebookgo/grace/gracenet
+github.com/facebookgo/httpdown
+github.com/facebookgo/stats
+github.com/garyburd/redigo/internal
+github.com/garyburd/redigo/redis
+github.com/golang/protobuf/proto
+github.com/golang/protobuf/proto/proto3_proto
+github.com/golang/protobuf/proto/testdata
+github.com/golang/protobuf/protoc-gen-go/descriptor
+github.com/golang/protobuf/ptypes
+github.com/golang/protobuf/ptypes/any
+github.com/golang/protobuf/ptypes/duration
+github.com/golang/protobuf/ptypes/timestamp
+github.com/golang/snappy
+github.com/kardianos/osext
+github.com/klauspost/crc32
+github.com/pierrec/lz4
+github.com/pierrec/xxHash/xxHash32
+github.com/rcrowley/go-metrics
+github.com/sony/gobreaker
+github.com/ugorji/go/codec
+github.com/julienschmidt/httprouter
+github.com/huandu/goroutine
+gopkg.in/yaml.v2
+)
+
+for d in ${deps[*]}
+do
+    if [ ! -d ${GOPATH}/src/$d ]; then
+        echo "pulling $d"
+        go get $d
+    fi
+done
+
+if [ ! -d ${GOPATH}/src/golang.org/x/net/context ]; then
+    echo 'pulling golang.org/x/net/context'
+    mkdir -p ${GOPATH}/src/golang.org/x/
+    pushd . >/dev/null 2>&1
+    cd ${GOPATH}/src/golang.org/x/
+    git clone https://github.com/golang/net
+    popd >/dev/null 2>&1
+fi
+
+go get -u -insecure github.com/k81/kate
+
+echo '[2] initializing project'
+KATE_DIR=$GOPATH/src/github.com/k81/kate
+SKEL_DIR=$KATE_DIR/skel
+
+if [ -z $SKEL_DIR ]; then
+    echo "skel dir not found"
+    exit 1
+fi
+
+cp -Rf $SKEL_DIR/* ./
+cp -f $SKEL_DIR/.gitignore ./
+
+function do_inflate() {
+    f=$1
+    #echo "inflating ... $f"
+    if [ $X_OS_TYPE = 'Darwin' ];then
+        sed -i '' -e "s:__APP_NAME__:$APP_NAME:g" $f
+        sed -i '' -e "s:__PROJECT_DIR__:$PROJECT_DIR:g" $f
+    else
+        sed -i -e "s:__APP_NAME__:$APP_NAME:g" $f
+        sed -i -e "s:__PROJECT_DIR__:$PROJECT_DIR:g" $f
+    fi
+}
+
+export -f do_inflate
+find . -type f -print |grep -v .git|xargs -n 1 -P 10 -I {} bash -c 'do_inflate "$@"' _ {}
+
+ENVS=(
+prod
+dev
+qa
+preview
+)
+for ENV in ${ENVS[*]} 
+do
+    mv ./conf/$ENV/__APP_NAME__.yaml ./conf/$ENV/$APP_NAME.yaml
+done
+echo '[3] done.'

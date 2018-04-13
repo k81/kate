@@ -1,0 +1,5 @@
+etcd_addrs:
+    - http://10.24.196.5:2379
+etcd_prefix: /__APP_NAME__/v1/
+watch_enabled: true
+watch_interval: 15
