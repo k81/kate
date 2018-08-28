@@ -35,7 +35,7 @@ func init() {
 	errFile = path.Join(homeDir, "log", fmt.Sprint(name, ".err"))
 	pidFile = path.Join(homeDir, "run", fmt.Sprint(name, ".pid"))
 	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".yaml"))
-	logFormatter = log.DidiFormatter
+	logFormatter = log.KVFormatter
 }
 
 func Setup() {

@@ -108,7 +108,7 @@ func DoWithTransport(ctx context.Context, method, url, contentType, reqBody stri
 	respBody = string(respData)
 
 	if Debug {
-		log.Debug(ctx, "http request end", "trace_id", traceId, "status_code", response.StatusCode, "duration_ms", time.Since(tBegin)/time.Millisecond)
+		log.Debug(ctx, "http request end", "trace_id", traceId, "status_code", response.StatusCode, "body", respBody, "duration_ms", time.Since(tBegin)/time.Millisecond)
 	}
 
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
