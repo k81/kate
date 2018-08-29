@@ -364,6 +364,9 @@ func (o *orm) Rollback() error {
 
 // return a raw query seter for raw sql string.
 func (o *orm) Raw(query string, args ...interface{}) RawSeter {
+	if o.alias == nil {
+		panic("no database selected")
+	}
 	return newRawSet(o, query, args)
 }
 
