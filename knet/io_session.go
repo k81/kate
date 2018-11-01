@@ -65,8 +65,8 @@ func NewIoSession(ctx context.Context, srv IoService, conn net.Conn) *IoSession 
 		recvQ:    make(chan Message, srv.IoConfig().RecvQueueSize),
 	}
 
-	s.conn.SetReadTimeout(s.conf.ReadTimeout)
-	s.conn.SetWriteTimeout(s.conf.WriteTimeout)
+	_ = s.conn.SetReadTimeout(s.conf.ReadTimeout)
+	_ = s.conn.SetWriteTimeout(s.conf.WriteTimeout)
 
 	return s
 }

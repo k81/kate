@@ -63,46 +63,6 @@ func getTableName(val reflect.Value) string {
 	return snakeString(reflect.Indirect(val).Type().Name())
 }
 
-// get table engine, mysiam or innodb.
-func getTableEngine(val reflect.Value) string {
-	fun := val.MethodByName("TableEngine")
-	if fun.IsValid() {
-		vals := fun.Call([]reflect.Value{})
-		if len(vals) > 0 && vals[0].Kind() == reflect.String {
-			return vals[0].String()
-		}
-	}
-	return ""
-}
-
-// get table index from method.
-func getTableIndex(val reflect.Value) [][]string {
-	fun := val.MethodByName("TableIndex")
-	if fun.IsValid() {
-		vals := fun.Call([]reflect.Value{})
-		if len(vals) > 0 && vals[0].CanInterface() {
-			if d, ok := vals[0].Interface().([][]string); ok {
-				return d
-			}
-		}
-	}
-	return nil
-}
-
-// get table unique from method
-func getTableUnique(val reflect.Value) [][]string {
-	fun := val.MethodByName("TableUnique")
-	if fun.IsValid() {
-		vals := fun.Call([]reflect.Value{})
-		if len(vals) > 0 && vals[0].CanInterface() {
-			if d, ok := vals[0].Interface().([][]string); ok {
-				return d
-			}
-		}
-	}
-	return nil
-}
-
 // get snaked column name
 func getColumnName(ft int, addrField reflect.Value, sf reflect.StructField, col string) string {
 	column := col

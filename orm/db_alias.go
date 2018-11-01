@@ -113,7 +113,7 @@ func detectTZ(al *alias) {
 	case DRMySQL:
 		row := al.DB.QueryRow("SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP)")
 		var tz string
-		row.Scan(&tz)
+		_ = row.Scan(&tz)
 		if len(tz) >= 8 {
 			if tz[0] != '-' {
 				tz = "+" + tz
@@ -132,7 +132,7 @@ func detectTZ(al *alias) {
 		row = al.DB.QueryRow("SELECT ENGINE, TRANSACTIONS FROM information_schema.engines WHERE SUPPORT = 'DEFAULT'")
 		var engine string
 		var tx bool
-		row.Scan(&engine, &tx)
+		_ = row.Scan(&engine, &tx)
 
 		if engine != "" {
 			al.Engine = engine

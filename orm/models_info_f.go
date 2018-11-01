@@ -116,7 +116,6 @@ type fieldInfo struct {
 	digits     int
 	decimals   int
 	isFielder  bool // implement Fielder interface
-	onDelete   string
 }
 
 // new field info

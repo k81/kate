@@ -45,7 +45,7 @@ func Timeout(timeout time.Duration, errTimeout ErrorInfo) Middleware {
 						dst[k] = vv
 					}
 					w.WriteHeader(tw.code)
-					w.Write(tw.wbuf.Bytes())
+					_, _ = w.Write(tw.wbuf.Bytes())
 				case <-ctx.Done():
 					tw.mu.Lock()
 					defer tw.mu.Unlock()

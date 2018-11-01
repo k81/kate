@@ -1,14 +1,10 @@
 package redsync
 
 import (
-	"context"
 	"time"
-
-	"github.com/k81/kate/log"
 )
 
 var (
-	mctx           = log.SetContext(context.Background(), "module", "redsync")
 	defaultRedsync = New([]Pool{&DefaultPool{}})
 )
 

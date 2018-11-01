@@ -54,7 +54,11 @@ func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httproute
 			r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		}
 
-		request.RawBody, err = ioutil.ReadAll(r.Body)
+		if request.RawBody, err = ioutil.ReadAll(r.Body); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			return
+		}
 		r.Body.Close()
 
 		r.Body = &BytesReadCloser{
@@ -64,10 +68,9 @@ func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httproute
 		err = r.ParseMultipartForm(maxBodyBytes)
 		switch {
 		case err == http.ErrNotMultipart:
-			err = nil
 		case err != nil:
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			_, _ = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 			log.Error(ctx, "read request", "error", err)
 			return
 		}
@@ -101,7 +104,11 @@ func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64) http.
 			r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		}
 
-		request.RawBody, err = ioutil.ReadAll(r.Body)
+		if request.RawBody, err = ioutil.ReadAll(r.Body); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(http.StatusText(http.StatusBadRequest)))
+			return
+		}
 		r.Body.Close()
 
 		r.Body = &BytesReadCloser{
@@ -111,10 +118,9 @@ func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64) http.
 		err = r.ParseMultipartForm(maxBodyBytes)
 		switch {
 		case err == http.ErrNotMultipart:
-			err = nil
 		case err != nil:
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			_, _ = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 			log.Error(ctx, "read request", "error", err)
 			return
 		}

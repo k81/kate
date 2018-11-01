@@ -17,7 +17,7 @@ func Recovery(h ContextHandler) ContextHandler {
 					Error(ctx, w, v)
 				default:
 					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+					_, _ = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 					log.Error(ctx, "got panic", "error", v, "stack", utils.GetPanicStack())
 				}
 			}

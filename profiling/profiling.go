@@ -11,9 +11,8 @@ import (
 )
 
 var (
-	mctx    = log.SetContext(context.Background(), "module", "profiling")
-	started bool
-	addr    string
+	mctx = log.SetContext(context.Background(), "module", "profiling")
+	addr string
 )
 
 func Enabled() bool {

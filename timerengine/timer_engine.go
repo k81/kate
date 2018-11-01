@@ -21,7 +21,6 @@ var (
 )
 
 type request struct {
-	taskId   uint64
 	taskFunc TaskFunc
 	delay    int64
 	result   chan *TimerTask

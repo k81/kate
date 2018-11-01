@@ -88,9 +88,14 @@ func (l *FileLogger) Rotate() {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to rotate err file \"%s\", reopen, reason=%v", l.errFileName, err)
 		return
 	}
-	syscall.Dup2(int(errFile.Fd()), int(l.errFile.Fd()))
+
+	if err = syscall.Dup2(int(errFile.Fd()), int(l.errFile.Fd())); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: failed to rotate err file \"%s\", dup2(), reason=%v", l.errFileName, err)
+		return
+	}
+
 	if err = errFile.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: failed to close err file \"%s\", close, reason=%v", l.errFileName, err)
+		fmt.Fprintf(os.Stderr, "ERROR: failed to close err file \"%s\", close(), reason=%v", l.errFileName, err)
 		return
 	}
 
@@ -98,9 +103,14 @@ func (l *FileLogger) Rotate() {
 		fmt.Fprintf(os.Stderr, "ERROR: failed to rotate log file\"%s\", reopen, reason=%v", l.logFileName, err)
 		return
 	}
-	syscall.Dup2(int(logFile.Fd()), int(l.logFile.Fd()))
+
+	if err = syscall.Dup2(int(logFile.Fd()), int(l.logFile.Fd())); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: failed to rotate log file \"%s\", dup2(), reason=%v", l.logFileName, err)
+		return
+	}
+
 	if err = logFile.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: failed to close log file \"%s\", close, reason=%v", l.logFileName, err)
+		fmt.Fprintf(os.Stderr, "ERROR: failed to close log file \"%s\", close(), reason=%v", l.logFileName, err)
 		return
 	}
 }

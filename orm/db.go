@@ -35,36 +35,6 @@ var (
 	ErrMissPK = errors.New("missed pk value")
 )
 
-var (
-	operators = map[string]bool{
-		"exact":     true,
-		"iexact":    true,
-		"contains":  true,
-		"icontains": true,
-		// "regex":       true,
-		// "iregex":      true,
-		"gt":          true,
-		"gte":         true,
-		"lt":          true,
-		"lte":         true,
-		"eq":          true,
-		"nq":          true,
-		"ne":          true,
-		"startswith":  true,
-		"endswith":    true,
-		"istartswith": true,
-		"iendswith":   true,
-		"in":          true,
-		"between":     true,
-		// "year":        true,
-		// "month":       true,
-		// "day":         true,
-		// "week_day":    true,
-		"isnull": true,
-		// "search":      true,
-	}
-)
-
 // an instance of dbBaser interface/
 type dbBase struct {
 	ins dbBaser
@@ -232,7 +202,9 @@ func (d *dbBase) collectFieldValue(mi *modelInfo, fi *fieldInfo, ind reflect.Val
 				value = tnow
 				if fi.isFielder {
 					f := field.Addr().Interface().(Fielder)
-					f.SetRaw(tnow.In(DefaultTimeLoc))
+					if err := f.SetRaw(tnow.In(DefaultTimeLoc)); err != nil {
+						return nil, err
+					}
 				} else if field.Kind() == reflect.Ptr {
 					v := tnow.In(DefaultTimeLoc)
 					field.Set(reflect.ValueOf(&v))

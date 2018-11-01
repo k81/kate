@@ -124,7 +124,7 @@ func (m *Mutex) genToken() (string, error) {
 
 func (m *Mutex) getDelay() time.Duration {
 	var n int64
-	binary.Read(rand.Reader, binary.LittleEndian, &n)
+	_ = binary.Read(rand.Reader, binary.LittleEndian, &n)
 	n = n % int64(m.delayMax-m.delayMin)
 	return time.Duration(n) + m.delayMin
 }

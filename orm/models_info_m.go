@@ -30,8 +30,6 @@ type modelInfo struct {
 	fields    *fields
 	manual    bool
 	addrField reflect.Value //store the original struct value
-	uniques   []string
-	isThrough bool
 }
 
 // new model info

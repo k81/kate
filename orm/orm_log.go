@@ -97,8 +97,6 @@ func newStmtQueryLog(ctx context.Context, dbName string, stmt stmtQuerier, query
 type dbQueryLog struct {
 	dbName string
 	db     dbQuerier
-	tx     txer
-	txe    txEnder
 	ctx    context.Context
 }
 

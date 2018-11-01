@@ -315,7 +315,7 @@ func (g *globalConfig) init() {
 			log.Error(mctx, "load config from server", "error", err)
 		} else {
 			loaded = true
-			g.saveItemsToCacheFile()
+			_ = g.saveItemsToCacheFile()
 		}
 	}
 
@@ -327,7 +327,7 @@ func (g *globalConfig) init() {
 		}
 	}
 
-	g.saveItemsToCacheFile()
+	_ = g.saveItemsToCacheFile()
 
 	if !Local.UseCacheOnly && Local.WatchEnabled {
 		g.startWatch()
@@ -466,7 +466,7 @@ func (g *globalConfig) watchLoop() {
 
 				if valid && len(updatedEntries) > 0 {
 					// save current global config copy in cache file
-					g.saveItemsToCacheFile()
+					_ = g.saveItemsToCacheFile()
 
 					for _, u := range updatedEntries {
 						g.onUpdate(u.entry, u.value)
