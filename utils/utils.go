@@ -52,8 +52,21 @@ func TrimUntil(s string, stop string) string {
 	return p[n-1]
 }
 
-func JoinN(c string, sep string, n int) string {
-	return strings.Join(strings.Split(strings.Repeat(c, n), ""), sep)
+func RepeatWithSep(s string, sep string, count int) string {
+	if count < 0 {
+		panic("negative RepeatWithSep count")
+	} else if count > 0 && len(s)*count/count != len(s) {
+		panic("RepeatWithSep count causes overflow")
+	}
+
+	b := make([]byte, len(s)*count+len(sep)*(count-1))
+	bp := copy(b, s)
+	bp += copy(b[bp:], sep)
+	for bp < len(b) {
+		copy(b[bp:], b[:bp])
+		bp *= 2
+	}
+	return string(b)
 }
 
 func JoinSlice(slice interface{}, sep string) string {
