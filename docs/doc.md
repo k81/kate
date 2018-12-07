@@ -60,7 +60,6 @@ kate提供如下组件：
     orm	        对db的面向对象封装。采用了和beego/orm完全一致的接口，去除了关联表和外键等影响性能的支持
     redismgr	redis manager, 链接池的封装，支持多codis代理节点负载均衡
     bigid	    64位ID生成器,支持分片因子继承
-    knet	    高性能的网络IO框架
     singleflight  合并多个相同的并发查询，只发送一次真实资源请求，待取得结果后，返回所有调用方
     cache	    在redismgr基础上提供的缓存访问的简单接口
     regexpool	正则表达匹配器的缓存池。正则表达匹配器对象的创建和销毁是很耗费资源的，采用pool技术缓存匹配器对象，提升性能
