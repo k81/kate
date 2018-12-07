@@ -6,8 +6,10 @@ import (
 	"github.com/k81/kate"
 )
 
-type Hello struct{}
+type HelloHandler struct {
+	kate.BaseHandler
+}
 
-func (h *Hello) ServeHTTP(ctx context.Context, w kate.ResponseWriter, r *kate.Request) {
-	kate.OkData(ctx, w, "hello world")
+func (h *HelloHandler) ServeHTTP(ctx context.Context, w kate.ResponseWriter, r *kate.Request) {
+	h.OKData(ctx, w, "hello world")
 }

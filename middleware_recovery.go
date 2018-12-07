@@ -11,15 +11,10 @@ import (
 func Recovery(h ContextHandler) ContextHandler {
 	f := func(ctx context.Context, w ResponseWriter, r *Request) {
 		defer func() {
-			if r := recover(); r != nil {
-				switch v := r.(type) {
-				case ErrorInfo:
-					Error(ctx, w, v)
-				default:
-					w.WriteHeader(http.StatusInternalServerError)
-					_, _ = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-					log.Error(ctx, "got panic", "error", v, "stack", utils.GetPanicStack())
-				}
+			if err := recover(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+				log.Error(ctx, "got panic", "error", err, "stack", utils.GetPanicStack())
 			}
 		}()
 

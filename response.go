@@ -1,8 +1,6 @@
 package kate
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"net/http"
 )
 
@@ -12,14 +10,6 @@ type ResponseWriter interface {
 	StatusCode() int
 
 	RawBody() []byte
-
-	EncodeJSON(v interface{}) ([]byte, error)
-
-	WriteJSON(v interface{}) error
-
-	EncodeXML(v interface{}) ([]byte, error)
-
-	WriteXML(v interface{}) error
 }
 
 type responseWriter struct {
@@ -45,38 +35,6 @@ func (w *responseWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 	w.wroteHeader = true
 	w.statusCode = code
-}
-
-func (w *responseWriter) EncodeJSON(v interface{}) ([]byte, error) {
-	return json.Marshal(v)
-}
-
-func (w *responseWriter) WriteJSON(v interface{}) error {
-	b, err := w.EncodeJSON(v)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(b)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (w *responseWriter) EncodeXML(v interface{}) ([]byte, error) {
-	return xml.Marshal(v)
-}
-
-func (w *responseWriter) WriteXML(v interface{}) error {
-	b, err := w.EncodeXML(v)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(b)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (w *responseWriter) Write(b []byte) (int, error) {
