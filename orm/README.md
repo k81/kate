@@ -22,6 +22,7 @@ Passed all test, but need more feedback.
 * cross DataBase compatible query
 * Raw SQL query / mapper without orm model
 * full test keep stable and strong
+* table sharding
 
 more features please read the docs
 
@@ -55,12 +56,21 @@ type User struct {
 	Name string `orm:"size(100)"`
 }
 
-func init() {
-	// register model
-	orm.RegisterModel(new(User))
+func (*User) TableName() string {
+    return "user"
+}
 
+// if table is sharded by id
+func (u *User) TableSuffix() string {
+    return strconv.Itoa(u.Id%100)
+}
+
+func init() {
 	// set default database
-	orm.RegisterDataBase("default", "mysql", "root:root@/my_db?charset=utf8", 30)
+	orm.RegisterDB("default", "mysql", "root:root@/my_db?charset=utf8", 30)
+	// register model
+	orm.RegisterModel("default", new(User))
+
 }
 
 func main() {
@@ -84,30 +94,13 @@ func main() {
 }
 ```
 
-#### Next with relation
-
-```go
-type Post struct {
-	Id    int    `orm:"auto"`
-	Title string `orm:"size(100)"`
-	User  *User  `orm:"rel(fk)"`
-}
-
-var posts []*Post
-qs := o.QueryTable("post")
-num, err := qs.Filter("User__Name", "slene").All(&posts)
-```
-
 #### Use Raw sql
 
 If you don't like ORM，use Raw SQL to query / mapping without ORM setting
 
 ```go
-var maps []Params
-num, err := o.Raw("SELECT id FROM user WHERE name = ?", "slene").Values(&maps)
-if num > 0 {
-	fmt.Println(maps[0]["id"])
-}
+var user User
+err := o.Raw("SELECT id FROM user WHERE name = ?", "slene").QueryRow(&user)
 ```
 
 #### Transaction
@@ -132,6 +125,7 @@ In development env, you can simple use
 ```go
 func main() {
 	orm.Debug = true
+    orm.DebugSQLBuilder = true
 ...
 ```
 

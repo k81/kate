@@ -71,13 +71,13 @@ func (mc *_modelCache) getByFullName(name string) (mi *modelInfo, ok bool) {
 
 // set model info to collection
 func (mc *_modelCache) set(table string, mi *modelInfo) *modelInfo {
-	mii := mc.cache[table]
+	oldMi := mc.cache[table]
 	mc.cache[table] = mi
 	mc.cacheByFullName[mi.fullName] = mi
-	if mii == nil {
+	if oldMi == nil {
 		mc.orders = append(mc.orders, table)
 	}
-	return mii
+	return oldMi
 }
 
 // clean all model info.

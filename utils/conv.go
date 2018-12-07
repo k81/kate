@@ -7,12 +7,14 @@ import (
 	"strconv"
 )
 
+// GetBool convert interface to bool.
 func GetBool(v interface{}) bool {
+	// nolint:errcheck
 	b, _ := strconv.ParseBool(GetString(v))
 	return b
 }
 
-// convert interface to string.
+// GetString convert interface to string.
 func GetString(v interface{}) string {
 	switch result := v.(type) {
 	case string:
@@ -27,7 +29,7 @@ func GetString(v interface{}) string {
 	return ""
 }
 
-// convert interface to int.
+// GetInt convert interface to int.
 func GetInt(v interface{}) int {
 	switch result := v.(type) {
 	case int:
@@ -38,6 +40,7 @@ func GetInt(v interface{}) int {
 		return int(result)
 	default:
 		if d := GetString(v); d != "" {
+			// nolint:errcheck
 			value, _ := strconv.Atoi(d)
 			return value
 		}
@@ -45,22 +48,28 @@ func GetInt(v interface{}) int {
 	return 0
 }
 
+// GetInt8 convert interface to int8.
 func GetInt8(v interface{}) int8 {
+	// nolint:errcheck
 	s, _ := strconv.ParseInt(GetString(v), 10, 8)
 	return int8(s)
 }
 
+// GetInt16 convert interface to int16.
 func GetInt16(v interface{}) int16 {
+	// nolint:errcheck
 	s, _ := strconv.ParseInt(GetString(v), 10, 16)
 	return int16(s)
 }
 
+// GetInt32 convert interface to int32.
 func GetInt32(v interface{}) int32 {
+	// nolint:errcheck
 	s, _ := strconv.ParseInt(GetString(v), 10, 32)
 	return int32(s)
 }
 
-// convert interface to int64.
+// GetInt64 convert interface to int64.
 func GetInt64(v interface{}) int64 {
 	switch result := v.(type) {
 	case int:
@@ -70,8 +79,8 @@ func GetInt64(v interface{}) int64 {
 	case int64:
 		return result
 	default:
-
 		if d := GetString(v); d != "" {
+			// nolint:errcheck
 			value, _ := strconv.ParseInt(d, 10, 64)
 			return value
 		}
@@ -79,27 +88,35 @@ func GetInt64(v interface{}) int64 {
 	return 0
 }
 
+// GetUint convert interface to uint.
 func GetUint(v interface{}) uint {
+	// nolint:errcheck
 	s, _ := strconv.ParseUint(GetString(v), 10, 64)
 	return uint(s)
 }
 
+// GetUint8 convert interface to uint8.
 func GetUint8(v interface{}) uint8 {
+	// nolint:errcheck
 	s, _ := strconv.ParseUint(GetString(v), 10, 8)
 	return uint8(s)
 }
 
+// GetUint16 convert interface to uint16.
 func GetUint16(v interface{}) uint16 {
+	// nolint:errcheck
 	s, _ := strconv.ParseUint(GetString(v), 10, 16)
 	return uint16(s)
 }
 
+// GetUint32 convert interface to uint32.
 func GetUint32(v interface{}) uint32 {
+	// nolint:errcheck
 	s, _ := strconv.ParseUint(GetString(v), 10, 32)
 	return uint32(s)
 }
 
-// convert interface to uint64.
+// GetUint64 convert interface to uint64.
 func GetUint64(v interface{}) uint64 {
 	switch result := v.(type) {
 	case int:
@@ -113,6 +130,7 @@ func GetUint64(v interface{}) uint64 {
 	default:
 
 		if d := GetString(v); d != "" {
+			// nolint:errcheck
 			value, _ := strconv.ParseUint(d, 10, 64)
 			return value
 		}
@@ -120,12 +138,16 @@ func GetUint64(v interface{}) uint64 {
 	return 0
 }
 
+// GetFloat32 convert interface to float32.
 func GetFloat32(v interface{}) float32 {
+	// nolint:errcheck
 	f, _ := strconv.ParseFloat(GetString(v), 32)
 	return float32(f)
 }
 
+// GetFloat64 convert interface to float64.
 func GetFloat64(v interface{}) float64 {
+	// nolint:errcheck
 	f, _ := strconv.ParseFloat(GetString(v), 64)
 	return f
 }
@@ -225,45 +247,4 @@ func GetByKind(kind reflect.Kind, v interface{}) (result interface{}) {
 		result = v
 	}
 	return
-}
-
-func T(name string) func(string) bool {
-	return func(field string) bool {
-		if field == name {
-			return true
-		}
-		if ToSnake(field) == name {
-			return true
-		}
-
-		if ToCamel(field) == name {
-			return true
-		}
-
-		if ToCamelLower(field) == name {
-			return true
-		}
-		return false
-	}
-}
-
-func FillStruct(s interface{}, data map[string]interface{}) {
-	t := reflect.ValueOf(s).Elem()
-
-	for k, v := range data {
-		match := T(k)
-
-		field := t.FieldByNameFunc(match)
-
-		if !field.IsValid() {
-			panic(fmt.Errorf("no such field %s", k))
-		}
-
-		if !field.CanSet() {
-			panic(fmt.Errorf("field %s can not be set", k))
-		}
-
-		val := GetByKind(field.Kind(), v)
-		field.Set(reflect.ValueOf(val))
-	}
 }

@@ -1,54 +1,3 @@
-// Copyright 2014 beego Author. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package orm provide ORM for MySQL/PostgreSQL/sqlite
-// Simple Usage
-//
-//	package main
-//
-//	import (
-//		"fmt"
-//		"github.com/k81/kate/orm"
-//		_ "github.com/go-sql-driver/mysql" // import your used driver
-//	)
-//
-//	// Model Struct
-//	type User struct {
-//		Id   int    `orm:"auto"`
-//		Name string `orm:"size(100)"`
-//	}
-//
-//	func init() {
-//		orm.RegisterDataBase("default", "mysql", "root:root@/my_db?charset=utf8", 30)
-//	}
-//
-//	func main() {
-//		o := orm.NewOrm()
-//		user := User{Name: "slene"}
-//		// insert
-//		id, err := o.Insert(&user)
-//		// update
-//		user.Name = "astaxie"
-//		num, err := o.Update(&user)
-//		// read one
-//		u := User{Id: user.Id}
-//		err = o.Read(&u)
-//		// delete
-//		num, err = o.Delete(&u)
-//	}
-//
-// more docs: http://beego.me/docs/mvc/model/overview.md
 package orm
 
 import (
@@ -58,40 +7,84 @@ import (
 	"fmt"
 	"reflect"
 	"time"
-
-	"github.com/k81/kate/log"
 )
 
 // Define common vars
 var (
 	Debug            = false
+	DebugSQLBuilder  = false
 	DefaultRowsLimit = 1000
 	DefaultTimeLoc   = time.Local
-	ErrTxHasBegan    = errors.New("<Ormer.Begin> transaction already begin")
-	ErrTxDone        = errors.New("<Ormer.Commit/Rollback> transaction not begin")
-	ErrMultiRows     = errors.New("<QuerySeter> return multi rows")
-	ErrNoRows        = errors.New("<QuerySeter> no row found")
-	ErrStmtClosed    = errors.New("<QuerySeter> stmt already closed")
-	ErrArgs          = errors.New("<Ormer> args error may be empty")
-	ErrNotImplement  = errors.New("have not implement")
-	mctx             = log.SetContext(context.Background(), "module", "orm")
 )
 
-// Params stores the Params
-type Params map[string]interface{}
-
-// ParamsList stores paramslist
-type ParamsList []interface{}
-
-type orm struct {
-	ctx    context.Context
-	alias  *alias
-	db     dbQuerier
-	dbName string
-	isTx   bool
+// Ormer define the orm interface
+type Ormer interface {
+	// read data to model
+	// for example:
+	//	this will find User by Id field
+	// 	u = &User{Id: user.Id}
+	// 	err = Ormer.Read(u)
+	//	this will find User by UserName field
+	// 	u = &User{UserName: "astaxie", Password: "pass"}
+	//	err = Ormer.Read(u, "UserName")
+	Read(md interface{}, cols ...string) error
+	// Like Read(), but with "FOR UPDATE" clause, useful in transaction.
+	// Some databases are not support this feature.
+	ReadForUpdate(md interface{}, cols ...string) error
+	// insert model data to database
+	// for example:
+	//  user := new(User)
+	//  id, err = Ormer.Insert(user)
+	//  user must a pointer and Insert will set user's pk field
+	Insert(interface{}) (int64, error)
+	// insert some models to database
+	InsertMulti(bulk int, mds interface{}) (int64, error)
+	// update model to database.
+	// cols set the columns those want to update.
+	// find model by Id(pk) field and update columns specified by fields, if cols is null then update all columns
+	// for example:
+	// user := User{Id: 2}
+	//	user.Langs = append(user.Langs, "zh-CN", "en-US")
+	//	user.Extra.Name = "beego"
+	//	user.Extra.Data = "orm"
+	//	num, err = Ormer.Update(&user, "Langs", "Extra")
+	Update(md interface{}, cols ...string) (int64, error)
+	// delete model in database
+	Delete(md interface{}, cols ...string) (int64, error)
+	// return a QuerySeter for table operations.
+	// table name can be string or struct.
+	// e.g. QueryTable("user"), QueryTable(&user{}) or QueryTable((*User)(nil)),
+	QueryTable(ptrStructOrTableName interface{}) QuerySetter
+	// switch to another registered database driver by given name.
+	Using(name string)
+	// begin transaction
+	// for example:
+	// 	o := NewOrm()
+	// 	err := o.Begin()
+	// 	...
+	// 	err = o.Rollback()
+	Begin() error
+	// commit transaction
+	Commit() error
+	// rollback transaction
+	Rollback() error
+	// return a raw query seter for raw sql string.
+	// for example:
+	//	 ormer.Raw("UPDATE `user` SET `user_name` = ? WHERE `user_name` = ?", "slene", "testing").Exec()
+	//	// update user testing's name to slene
+	Raw(query string, args ...interface{}) RawQueryer
+	// RollbackIfNotCommitted as its name explains.
+	RollbackIfNotCommitted()
 }
 
 var _ Ormer = new(orm)
+
+type orm struct {
+	ctx    context.Context
+	db     dbQueryer
+	dbName string
+	isTx   bool
+}
 
 // get model info and model reflect value
 func (o *orm) getMiInd(md interface{}, needPtr bool) (mi *modelInfo, ind reflect.Value) {
@@ -101,64 +94,48 @@ func (o *orm) getMiInd(md interface{}, needPtr bool) (mi *modelInfo, ind reflect
 	if needPtr && val.Kind() != reflect.Ptr {
 		panic(fmt.Errorf("<Ormer> cannot use non-ptr model struct `%s`", getFullName(typ)))
 	}
+
 	name := getFullName(typ)
-	if mi, ok := modelCache.getByFullName(name); ok {
-		return mi, ind
+	mi, ok := modelCache.getByFullName(name)
+	if !ok {
+		panic(fmt.Errorf("<Ormer> table: `%s` not found, maybe not RegisterModel", name))
 	}
-	panic(fmt.Errorf("<Ormer> table: `%s` not found, maybe not RegisterModel", name))
+	return mi, ind
 }
 
-// get field info from model info by given field name
-func (o *orm) getFieldInfo(mi *modelInfo, name string) *fieldInfo {
-	fi, ok := mi.fields.GetByAny(name)
-	if !ok {
-		panic(fmt.Errorf("<Ormer> cannot find field `%s` for model `%s`", name, mi.fullName))
+func (o *orm) ReadFromMaster(md interface{}, cols ...string) error {
+	mi, ind := o.getMiInd(md, true)
+	if !o.isTx {
+		o.Using(mi.db)
 	}
-	return fi
+	return mi.Read(o.ctx, o.db, ind, cols, false, true)
 }
 
 // read data to model
 func (o *orm) Read(md interface{}, cols ...string) error {
 	mi, ind := o.getMiInd(md, true)
 	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
+		o.Using(mi.db)
 	}
-	return o.alias.DbBaser.Read(o.db, mi, ind, o.alias.TZ, cols, false)
+	return mi.Read(o.ctx, o.db, ind, cols, false, false)
 }
 
 // read data to model, like Read(), but use "SELECT FOR UPDATE" form
 func (o *orm) ReadForUpdate(md interface{}, cols ...string) error {
 	mi, ind := o.getMiInd(md, true)
 	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
+		o.Using(mi.db)
 	}
-	return o.alias.DbBaser.Read(o.db, mi, ind, o.alias.TZ, cols, true)
-}
-
-// Try to read a row from the database, or insert one if it doesn't exist
-func (o *orm) ReadOrCreate(md interface{}, col1 string, cols ...string) (bool, int64, error) {
-	cols = append([]string{col1}, cols...)
-	mi, ind := o.getMiInd(md, true)
-	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
-	}
-	err := o.alias.DbBaser.Read(o.db, mi, ind, o.alias.TZ, cols, false)
-	if err == ErrNoRows {
-		// Create
-		id, err := o.Insert(md)
-		return (err == nil), id, err
-	}
-
-	return false, ind.FieldByIndex(mi.fields.pk.fieldIndex).Int(), err
+	return mi.Read(o.ctx, o.db, ind, cols, true, false)
 }
 
 // insert model data to database
 func (o *orm) Insert(md interface{}) (int64, error) {
 	mi, ind := o.getMiInd(md, true)
 	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
+		o.Using(mi.db)
 	}
-	id, err := o.alias.DbBaser.Insert(o.db, mi, ind, o.alias.TZ)
+	id, err := mi.Insert(o.ctx, o.db, ind)
 	if err != nil {
 		return id, err
 	}
@@ -170,63 +147,34 @@ func (o *orm) Insert(md interface{}) (int64, error) {
 
 // set auto pk field
 func (o *orm) setPk(mi *modelInfo, ind reflect.Value, id int64) {
-	if mi.fields.pk.auto {
-		if mi.fields.pk.fieldType&IsPositiveIntegerField > 0 {
-			ind.FieldByIndex(mi.fields.pk.fieldIndex).SetUint(uint64(id))
-		} else {
-			ind.FieldByIndex(mi.fields.pk.fieldIndex).SetInt(id)
-		}
-	}
+	ind.FieldByIndex(mi.fields.pk.fieldIndex).SetInt(id)
 }
 
 // insert some models to database
 func (o *orm) InsertMulti(bulk int, mds interface{}) (int64, error) {
-	var cnt int64
-
 	sind := reflect.Indirect(reflect.ValueOf(mds))
 
 	switch sind.Kind() {
 	case reflect.Array, reflect.Slice:
 		if sind.Len() == 0 {
-			return cnt, ErrArgs
+			panic(errors.New("<Ormer> InsertMulti args length is zero"))
 		}
 	default:
-		return cnt, ErrArgs
+		panic(errors.New("<Ormer> InsertMulti args must be array or slice"))
 	}
 
-	if bulk <= 1 {
-		for i := 0; i < sind.Len(); i++ {
-			ind := reflect.Indirect(sind.Index(i))
-			mi, _ := o.getMiInd(ind.Interface(), false)
-			if !o.isTx {
-				o.setDbByMiInd(mi, ind)
-			}
-			id, err := o.alias.DbBaser.Insert(o.db, mi, ind, o.alias.TZ)
-			if err != nil {
-				return cnt, err
-			}
-
-			o.setPk(mi, ind, id)
-
-			cnt++
+	tableSuffix := getTableSuffix(sind.Index(0))
+	for i := 1; i < sind.Len(); i++ {
+		if tableSuffix != getTableSuffix(sind.Index(i)) {
+			return 0, ErrTableSuffixNotSameInBatchInsert
 		}
-	} else {
-		mi, ind := o.getMiInd(sind.Index(0).Interface(), false)
-		if !o.isTx {
-			o.setDbByMiInd(mi, ind)
-		}
-		return o.alias.DbBaser.InsertMulti(o.db, mi, sind, bulk, o.alias.TZ)
 	}
-	return cnt, nil
-}
 
-// InsertOrUpdate data to database
-func (o *orm) InsertOrUpdate(md interface{}, colConflitAndArgs ...string) (int64, error) {
-	mi, ind := o.getMiInd(md, true)
+	mi, _ := o.getMiInd(sind.Index(0).Interface(), false)
 	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
+		o.Using(mi.db)
 	}
-	return o.alias.DbBaser.InsertOrUpdate(o.db, mi, ind, o.alias, colConflitAndArgs...)
+	return mi.InsertMulti(o.ctx, o.db, sind, bulk, tableSuffix)
 }
 
 // update model to database.
@@ -234,9 +182,9 @@ func (o *orm) InsertOrUpdate(md interface{}, colConflitAndArgs ...string) (int64
 func (o *orm) Update(md interface{}, cols ...string) (int64, error) {
 	mi, ind := o.getMiInd(md, true)
 	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
+		o.Using(mi.db)
 	}
-	return o.alias.DbBaser.Update(o.db, mi, ind, o.alias.TZ, cols)
+	return mi.Update(o.ctx, o.db, ind, cols)
 }
 
 // delete model in database
@@ -244,9 +192,9 @@ func (o *orm) Update(md interface{}, cols ...string) (int64, error) {
 func (o *orm) Delete(md interface{}, cols ...string) (int64, error) {
 	mi, ind := o.getMiInd(md, true)
 	if !o.isTx {
-		o.setDbByMiInd(mi, ind)
+		o.Using(mi.db)
 	}
-	num, err := o.alias.DbBaser.Delete(o.db, mi, ind, o.alias.TZ, cols)
+	num, err := mi.Delete(o.ctx, o.db, ind, cols)
 	if err != nil {
 		return num, err
 	}
@@ -256,20 +204,17 @@ func (o *orm) Delete(md interface{}, cols ...string) (int64, error) {
 	return num, nil
 }
 
-// return a QuerySeter for table operations.
-// table name can be string or struct.
-// e.g. QueryTable("user"), QueryTable(&user{}) or QueryTable((*User)(nil)),
-func (o *orm) QueryTable(ptrStructOrTableName interface{}) (qs QuerySeter) {
+func (o *orm) QueryTable(ptrStructOrTableName interface{}) (qs QuerySetter) {
 	var name string
 	if table, ok := ptrStructOrTableName.(string); ok {
 		name = snakeString(table)
 		if mi, ok := modelCache.get(name); ok {
-			qs = newQuerySet(o, mi)
+			qs = newQuerySetter(o, mi)
 		}
 	} else {
 		name = getFullName(indirectType(reflect.TypeOf(ptrStructOrTableName)))
 		if mi, ok := modelCache.getByFullName(name); ok {
-			qs = newQuerySet(o, mi)
+			qs = newQuerySetter(o, mi)
 		}
 	}
 	if qs == nil {
@@ -278,50 +223,46 @@ func (o *orm) QueryTable(ptrStructOrTableName interface{}) (qs QuerySeter) {
 	return
 }
 
-func (o *orm) Using(dbName string) error {
-	o.setDb(dbName)
-	return nil
-}
-
-func (o *orm) setDb(dbName string) {
+func (o *orm) Using(dbName string) {
 	if o.isTx {
 		panic(fmt.Errorf("<Ormer.Using> transaction has been start, cannot change db"))
 	}
 
-	al, ok := dataBaseCache.get(dbName)
+	if dbName == o.dbName {
+		return
+	}
+
+	db, ok := dbCache.get(dbName)
 	if !ok {
-		al = dataBaseCache.getDefault()
+		db = dbCache.getDefault()
+		dbName = "default"
 	}
 
 	o.dbName = dbName
-	o.alias = al
-
-	db := al.DB
 
 	if Debug {
-		o.db = newDbQueryLog(o.ctx, dbName, db)
+		o.db = newDbQueryLog(o.ctx, dbName, db.DB)
 	} else {
-		o.db = db
+		o.db = db.DB
 	}
 }
 
-// switch to another registered database driver by given name.
-func (o *orm) setDbByMiInd(mi *modelInfo, ind reflect.Value) {
-	var (
-		dbName = mi.db
-	)
-	if o.db == nil {
-		o.setDb(dbName)
-	}
-}
-
-// begin transaction
+// Begin start a new transaction
 func (o *orm) Begin() error {
+	return o.BeginTx(nil)
+}
+
+// begin start a new transaction with tx options
+func (o *orm) BeginTx(opt *sql.TxOptions) error {
 	if o.isTx {
 		return ErrTxHasBegan
 	}
-	var tx *sql.Tx
-	tx, err := o.db.(txer).Begin()
+
+	if o.db == nil {
+		o.Using("default")
+	}
+
+	tx, err := o.db.(txer).BeginTx(o.ctx, opt)
 	if err != nil {
 		return err
 	}
@@ -363,18 +304,22 @@ func (o *orm) Rollback() error {
 }
 
 // return a raw query seter for raw sql string.
-func (o *orm) Raw(query string, args ...interface{}) RawSeter {
-	if o.alias == nil {
-		panic("no database selected")
+func (o *orm) Raw(query string, args ...interface{}) RawQueryer {
+	if o.db == nil {
+		o.Using("default")
 	}
-	return newRawSet(o, query, args)
+	return newRawQueryer(o, query, args)
 }
 
-// return current using database Driver
-func (o *orm) Driver() Driver {
-	return driver(o.alias.Name)
+// RollbackIfNotCommitted as its name explains.
+func (o *orm) RollbackIfNotCommitted() {
+	if o.isTx {
+		// nolint:errcheck
+		o.Rollback()
+	}
 }
 
+// NewOrm create a new orm object.
 func NewOrm(ctx context.Context) Ormer {
 	BootStrap() // execute only once
 
