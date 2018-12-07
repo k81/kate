@@ -104,4 +104,4 @@ tree命令可以看下当前工程的目录结构
     http://127.0.0.1:8000/hello
 
 如下图：
-![](https://raw.githubusercontent.com/k81/kate_docs/master/hello-world.png)
+![](https://github.com/k81/kate/blob/master/docs/resources/hello-world.png)

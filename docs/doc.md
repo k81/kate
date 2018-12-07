@@ -16,7 +16,7 @@ go语言的编程范式是生成大量的goroutine去执行具体的计算和IO�
 
 假如前端已经取消了请求，那与请求相关的所有子任务的结果实际上已经没有意义了，这时候如何取消这些任务，靠的就是context。
 
-![](https://raw.githubusercontent.com/k81/kate_docs/master/Understanding-Go-Context-Library-Google-Docs.png)
+![](https://raw.githubusercontent.com/k81/kate/master/docs/resources/Understanding-Go-Context-Library-Google-Docs.png)
 
 context维护了任务的派生关系树，当主任务取消或超时时，子任务会得到结束通知，这样实现了整个任务树的清理。
 
@@ -34,14 +34,14 @@ kate不只在请求的handler接口中支持context，日志模块也支持conte
 ## 2.2 支持middleware扩展
 
 在kate中，请求的处理流程是这样的：
-![](https://raw.githubusercontent.com/k81/kate_docs/master/middlware.png)
+![](https://raw.githubusercontent.com/k81/kate/master/docs/resources/middlware.png)
 中间件可以将通用的处理流程封装在一个地方，有效减少重复代码，提高编程效率。
 ## 2.3 配置集中化管理
 
 传统的配置都保留在本地，这对于多节点部署的服务来说，更改一次配置，需要去多个机器上修改配置，很不方便。
 
 kate的配置使用etcd服务，集中式管理。
-![](https://raw.githubusercontent.com/k81/kate_docs/master/etcd.png)
+![](https://raw.githubusercontent.com/k81/kate/master/docs/resources/etcd.png)
 
 ## 2.4 支持pprof性能监控
 
