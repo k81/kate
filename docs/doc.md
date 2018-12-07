@@ -57,21 +57,18 @@ kate可以配置是否开启golang的http/pprof性能监控。pprof是个很好�
 
 kate提供如下组件：
 
-    orm	        对db的面向对象封装库，支持mysql和cdbpool。采用了和beego/orm完全一致的接口，去除了关联表和外键等影响性能的支持
+    orm	        对db的面向对象封装。采用了和beego/orm完全一致的接口，去除了关联表和外键等影响性能的支持
     redismgr	redis manager, 链接池的封装，支持多codis代理节点负载均衡
-    bigid	cdbpool中间件的big生成算法库
-    knet	高性能的网络IO框架，cdbpool的client端就使用了这个框架
+    bigid	    64位ID生成器,支持分片因子继承
+    knet	    高性能的网络IO框架
     singleflight  合并多个相同的并发查询，只发送一次真实资源请求，待取得结果后，返回所有调用方
-    cache	在redismgr基础上提供的缓存访问的简单接口
+    cache	    在redismgr基础上提供的缓存访问的简单接口
     regexpool	正则表达匹配器的缓存池。正则表达匹配器对象的创建和销毁是很耗费资源的，采用pool技术缓存匹配器对象，提升性能
-    retry	重试策略库，提供多种重试策略：固定延迟重试、指数后退重试、限定最长时间的重试、限定最大次数的重试等，并支持策略组合
-    redsync	RedLock分布式锁的实现
-    kafka	kafka分布式集群客户端实现，支持负载均衡和offset管理器
-    eventbus    事件总线，对MQ的高级封装。上层通过注册Codec编码器，来订阅或发布不同topic的消息
-    datasync	binlog消费组件
+    retry	    重试策略库，提供多种重试策略：固定延迟重试、指数后退重试、限定最长时间的重试、限定最大次数的重试等，并支持策略组合
+    redsync	    RedLock分布式锁的实现
     httpclient	http客户端组件
     taskengine	任务池组件，用于执行异步任务
-    utils	工具包，提供一些常用的工具函数
-    config	配置管理器，提供本地配置读取和etcd集中配置读取
+    utils	    工具包，提供一些常用的工具函数
+    config	    配置管理器，提供本地配置读取和etcd集中配置读取
     log	        日志组件
 
