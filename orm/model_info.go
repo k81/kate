@@ -44,7 +44,7 @@ func (mi *modelInfo) getTableByInd(ind reflect.Value) string {
 	var tableName string
 
 	if mi.sharded {
-		tableSuffix := getTableSuffix(ind)
+		tableSuffix := getTableSuffix(ind.Addr())
 		if tableSuffix == "" {
 			panic(ErrNoTableSuffix(mi.table))
 		}
@@ -247,8 +247,11 @@ func (mi *modelInfo) getOrderByCols(orders []string) []string {
 	cols := make([]string, 0, len(orders))
 	for _, order := range orders {
 		direction := "ASC"
-		if order[0] == '-' {
+		switch order[0] {
+		case '-':
 			direction = "DESC"
+			order = order[1:]
+		case '+':
 			order = order[1:]
 		}
 

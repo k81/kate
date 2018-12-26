@@ -45,12 +45,7 @@ func isSharded(val reflect.Value) bool {
 	return false
 }
 
-func getTableSuffix(ind reflect.Value) string {
-	if !ind.CanAddr() {
-		return ""
-	}
-
-	val := ind.Addr()
+func getTableSuffix(val reflect.Value) string {
 	if fun := val.MethodByName("TableSuffix"); fun.IsValid() {
 		vals := fun.Call([]reflect.Value{})
 		if len(vals) > 0 && vals[0].Kind() == reflect.String {

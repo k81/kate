@@ -63,6 +63,15 @@ func TestInsert(t *testing.T) {
 	require.NoError(t, err, "insert person3 failed")
 	require.Equal(t, id, person3.ID, "check person3.ID")
 
+	persons := []*shardedPerson{
+		{PersonID: 3, Name: "multi_3"},
+		{PersonID: 7, Name: "multi_7"},
+		{PersonID: 11, Name: "multi_11"},
+	}
+
+	_, err = db.InsertMulti(10, persons)
+	require.NoError(t, err, "insertMulti persons failed")
+
 	for i := 0; i < 4; i++ {
 		tableSuffix := strconv.Itoa(i)
 		delCnt, err := NewOrm(context.TODO()).QueryTable(new(shardedPerson)).WithSuffix(tableSuffix).Delete()
