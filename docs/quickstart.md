@@ -46,9 +46,9 @@ tree命令可以看下当前工程的目录结构
     │   └── httpsrv.go        //模块入口文件，初始化router和http.Server对象
     ├── main.go   //程序入口文件
     ├── Makefile  //编译程序的Makefile，执行make编译
-    ├── models    //数据模块，如程序不需访问DB，此模块可删除掉
+    ├─repo         //数据模块，如程序不需访问DB，此模块可删除掉
     │   ├── config.go         //本模块配置项
-    │   └── models.go         //模块入口文件，初始化db链接
+    │   └── repo.go         //模块入口文件，初始化db链接
     ├── service   //业务逻辑代码目录
     └── script    //脚本目录
         ├── build.sh          //编译和打包脚本
@@ -104,4 +104,4 @@ tree命令可以看下当前工程的目录结构
     http://127.0.0.1:8000/hello
 
 如下图：
-![](https://raw.githubusercontent.com/k81/kate_docs/master/hello-world.png)
+![](https://github.com/k81/kate/blob/master/docs/resources/hello-world.png)

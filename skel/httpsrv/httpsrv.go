@@ -25,7 +25,7 @@ func GetServer() *http.Server {
 	// 注册Handler
 	router := kate.NewRESTRouter(mctx)
 	router.SetMaxBodyBytes(conf.MaxBodyBytes)
-	router.GET("/hello", c.Then(&Hello{}))
+	router.GET("/hello", c.Then(&HelloHandler{}))
 
 	// 生成一个http.Server对象
 	server := &http.Server{

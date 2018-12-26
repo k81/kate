@@ -23,7 +23,8 @@ func Init() {
 		connMaxLifetime = confPools.ConnMaxLifetime
 	)
 
-	orm.RegisterDataBase("default", driverName, dataSource, maxIdle, maxOpen, connMaxLifetime)
+	orm.Debug = confBasic.DebugSql
+	orm.RegisterDB("default", driverName, dataSource, maxIdle, maxOpen, connMaxLifetime)
 
 	//将__DB_NAME__换成对应的数据库名称, 将__TYPE1__ 等换成对应的数据类型的实例.
 	//orm.RegisterModel(__DB_NAME__, __TYPE1__, __TYPE2__, ...)

@@ -910,24 +910,6 @@ func (d *Decimal) ensureInitialized() {
 	}
 }
 
-// support orm
-func (d *Decimal) SetRaw(v interface{}) error {
-	val, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("<decimal.Decimal> raw value type not supported: %v", v)
-	}
-	dval, err := NewFromString(val)
-	if err != nil {
-		return fmt.Errorf("<decimal.Decimal> invalid value: %v. error=%v", val, err)
-	}
-	*d = dval
-	return nil
-}
-
-func (d *Decimal) RawValue() interface{} {
-	return d.String()
-}
-
 // Min returns the smallest Decimal that was passed in the arguments.
 //
 // To call this function with an array, you must do:

@@ -16,7 +16,7 @@ go语言的编程范式是生成大量的goroutine去执行具体的计算和IO�
 
 假如前端已经取消了请求，那与请求相关的所有子任务的结果实际上已经没有意义了，这时候如何取消这些任务，靠的就是context。
 
-![](https://raw.githubusercontent.com/k81/kate_docs/master/Understanding-Go-Context-Library-Google-Docs.png)
+![](https://raw.githubusercontent.com/k81/kate/master/docs/resources/Understanding-Go-Context-Library-Google-Docs.png)
 
 context维护了任务的派生关系树，当主任务取消或超时时，子任务会得到结束通知，这样实现了整个任务树的清理。
 
@@ -34,14 +34,14 @@ kate不只在请求的handler接口中支持context，日志模块也支持conte
 ## 2.2 支持middleware扩展
 
 在kate中，请求的处理流程是这样的：
-![](https://raw.githubusercontent.com/k81/kate_docs/master/middlware.png)
+![](https://raw.githubusercontent.com/k81/kate/master/docs/resources/middlware.png)
 中间件可以将通用的处理流程封装在一个地方，有效减少重复代码，提高编程效率。
 ## 2.3 配置集中化管理
 
 传统的配置都保留在本地，这对于多节点部署的服务来说，更改一次配置，需要去多个机器上修改配置，很不方便。
 
 kate的配置使用etcd服务，集中式管理。
-![](https://raw.githubusercontent.com/k81/kate_docs/master/etcd.png)
+![](https://raw.githubusercontent.com/k81/kate/master/docs/resources/etcd.png)
 
 ## 2.4 支持pprof性能监控
 
@@ -57,21 +57,17 @@ kate可以配置是否开启golang的http/pprof性能监控。pprof是个很好�
 
 kate提供如下组件：
 
-    orm	        对db的面向对象封装库，支持mysql和cdbpool。采用了和beego/orm完全一致的接口，去除了关联表和外键等影响性能的支持
+    orm	        对db的面向对象封装。采用了和beego/orm完全一致的接口，去除了关联表和外键等影响性能的支持
     redismgr	redis manager, 链接池的封装，支持多codis代理节点负载均衡
-    bigid	cdbpool中间件的big生成算法库
-    knet	高性能的网络IO框架，cdbpool的client端就使用了这个框架
+    bigid	    64位ID生成器,支持分片因子继承
     singleflight  合并多个相同的并发查询，只发送一次真实资源请求，待取得结果后，返回所有调用方
-    cache	在redismgr基础上提供的缓存访问的简单接口
+    cache	    在redismgr基础上提供的缓存访问的简单接口
     regexpool	正则表达匹配器的缓存池。正则表达匹配器对象的创建和销毁是很耗费资源的，采用pool技术缓存匹配器对象，提升性能
-    retry	重试策略库，提供多种重试策略：固定延迟重试、指数后退重试、限定最长时间的重试、限定最大次数的重试等，并支持策略组合
-    redsync	RedLock分布式锁的实现
-    kafka	kafka分布式集群客户端实现，支持负载均衡和offset管理器
-    eventbus    事件总线，对MQ的高级封装。上层通过注册Codec编码器，来订阅或发布不同topic的消息
-    datasync	binlog消费组件
+    retry	    重试策略库，提供多种重试策略：固定延迟重试、指数后退重试、限定最长时间的重试、限定最大次数的重试等，并支持策略组合
+    redsync	    RedLock分布式锁的实现
     httpclient	http客户端组件
     taskengine	任务池组件，用于执行异步任务
-    utils	工具包，提供一些常用的工具函数
-    config	配置管理器，提供本地配置读取和etcd集中配置读取
+    utils	    工具包，提供一些常用的工具函数
+    config	    配置管理器，提供本地配置读取和etcd集中配置读取
     log	        日志组件
 

@@ -1,17 +1,3 @@
-// Copyright 2014 beego Author. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package orm
 
 import (
@@ -20,10 +6,17 @@ import (
 	"time"
 
 	"github.com/k81/kate/log"
-	"github.com/k81/kate/utils"
 )
 
-func debugLogQueies(ctx context.Context, dbName string, operation, query string, t time.Time, err error, args ...interface{}) {
+func debugLogQueies(
+	ctx context.Context,
+	dbName string,
+	operation,
+	query string,
+	t time.Time,
+	err error,
+	args ...interface{},
+) {
 	var (
 		elapsed = int64(time.Since(t) / time.Millisecond)
 		flag    = "OK"
@@ -39,51 +32,51 @@ func debugLogQueies(ctx context.Context, dbName string, operation, query string,
 		"operation", operation,
 		"elapsed_ms", elapsed,
 		"sql", query,
-		"args", utils.JoinSlice(args, ","),
+		"args", args,
 		"error", err,
 	)
 }
 
 // statement query logger struct.
-// if dev mode, use stmtQueryLog, or use stmtQuerier.
+// if dev mode, use stmtQueryLog, or use StmtQueryer.
 type stmtQueryLog struct {
 	dbName string
 	query  string
-	stmt   stmtQuerier
+	stmt   StmtQueryer
 	ctx    context.Context
 }
 
-var _ stmtQuerier = new(stmtQueryLog)
+var _ StmtQueryer = new(stmtQueryLog)
 
 func (d *stmtQueryLog) Close() error {
 	a := time.Now()
 	err := d.stmt.Close()
-	debugLogQueies(d.ctx, d.dbName, "st.Close", d.query, a, err)
+	debugLogQueies(d.ctx, d.dbName, "stmt.Close", d.query, a, err)
 	return err
 }
 
-func (d *stmtQueryLog) Exec(args ...interface{}) (sql.Result, error) {
+func (d *stmtQueryLog) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	a := time.Now()
-	res, err := d.stmt.Exec(args...)
-	debugLogQueies(d.ctx, d.dbName, "st.Exec", d.query, a, err, args...)
+	res, err := d.stmt.ExecContext(ctx, args...)
+	debugLogQueies(ctx, d.dbName, "stmt.ExecContext", d.query, a, err, args...)
 	return res, err
 }
 
-func (d *stmtQueryLog) Query(args ...interface{}) (*sql.Rows, error) {
+func (d *stmtQueryLog) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	a := time.Now()
-	res, err := d.stmt.Query(args...)
-	debugLogQueies(d.ctx, d.dbName, "st.Query", d.query, a, err, args...)
+	res, err := d.stmt.QueryContext(ctx, args...)
+	debugLogQueies(ctx, d.dbName, "stmt.QueryContext", d.query, a, err, args...)
 	return res, err
 }
 
-func (d *stmtQueryLog) QueryRow(args ...interface{}) *sql.Row {
+func (d *stmtQueryLog) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	a := time.Now()
-	res := d.stmt.QueryRow(args...)
-	debugLogQueies(d.ctx, d.dbName, "st.QueryRow", d.query, a, nil, args...)
+	res := d.stmt.QueryRowContext(ctx, args...)
+	debugLogQueies(ctx, d.dbName, "stmt.QueryRowContext", d.query, a, nil, args...)
 	return res
 }
 
-func newStmtQueryLog(ctx context.Context, dbName string, stmt stmtQuerier, query string) stmtQuerier {
+func newStmtQueryLog(ctx context.Context, dbName string, stmt StmtQueryer, query string) StmtQueryer {
 	d := new(stmtQueryLog)
 	d.ctx = ctx
 	d.stmt = stmt
@@ -93,49 +86,49 @@ func newStmtQueryLog(ctx context.Context, dbName string, stmt stmtQuerier, query
 }
 
 // database query logger struct.
-// if dev mode, use dbQueryLog, or use dbQuerier.
+// if dev mode, use dbQueryLog, or use dbQueryer.
 type dbQueryLog struct {
 	dbName string
-	db     dbQuerier
+	db     dbQueryer
 	ctx    context.Context
 }
 
-var _ dbQuerier = new(dbQueryLog)
+var _ dbQueryer = new(dbQueryLog)
 var _ txer = new(dbQueryLog)
 var _ txEnder = new(dbQueryLog)
 
-func (d *dbQueryLog) Prepare(query string) (*sql.Stmt, error) {
+func (d *dbQueryLog) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
 	a := time.Now()
-	stmt, err := d.db.Prepare(query)
-	debugLogQueies(d.ctx, d.dbName, "db.Prepare", query, a, err)
+	stmt, err := d.db.PrepareContext(ctx, query)
+	debugLogQueies(ctx, d.dbName, "db.PrepareContext", query, a, err)
 	return stmt, err
 }
 
-func (d *dbQueryLog) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (d *dbQueryLog) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	a := time.Now()
-	res, err := d.db.Exec(query, args...)
-	debugLogQueies(d.ctx, d.dbName, "db.Exec", query, a, err, args...)
+	res, err := d.db.ExecContext(ctx, query, args...)
+	debugLogQueies(ctx, d.dbName, "db.ExecContext", query, a, err, args...)
 	return res, err
 }
 
-func (d *dbQueryLog) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (d *dbQueryLog) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	a := time.Now()
-	res, err := d.db.Query(query, args...)
-	debugLogQueies(d.ctx, d.dbName, "db.Query", query, a, err, args...)
+	res, err := d.db.QueryContext(ctx, query, args...)
+	debugLogQueies(ctx, d.dbName, "db.QueryContext", query, a, err, args...)
 	return res, err
 }
 
-func (d *dbQueryLog) QueryRow(query string, args ...interface{}) *sql.Row {
+func (d *dbQueryLog) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	a := time.Now()
-	res := d.db.QueryRow(query, args...)
-	debugLogQueies(d.ctx, d.dbName, "db.QueryRow", query, a, nil, args...)
+	res := d.db.QueryRowContext(ctx, query, args...)
+	debugLogQueies(ctx, d.dbName, "db.QueryRowContext", query, a, nil, args...)
 	return res
 }
 
-func (d *dbQueryLog) Begin() (*sql.Tx, error) {
+func (d *dbQueryLog) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
 	a := time.Now()
-	tx, err := d.db.(txer).Begin()
-	debugLogQueies(d.ctx, d.dbName, "db.Begin", "START TRANSACTION", a, err)
+	tx, err := d.db.(txer).BeginTx(ctx, opts)
+	debugLogQueies(ctx, d.dbName, "db.BeginTx", "START TRANSACTION", a, err)
 	return tx, err
 }
 
@@ -153,11 +146,11 @@ func (d *dbQueryLog) Rollback() error {
 	return err
 }
 
-func (d *dbQueryLog) SetDB(db dbQuerier) {
+func (d *dbQueryLog) SetDB(db dbQueryer) {
 	d.db = db
 }
 
-func newDbQueryLog(ctx context.Context, dbName string, db dbQuerier) dbQuerier {
+func newDbQueryLog(ctx context.Context, dbName string, db dbQueryer) dbQueryer {
 	d := new(dbQueryLog)
 	d.ctx = ctx
 	d.dbName = dbName
