@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/k81/kate/log"
-	"github.com/k81/kate/orm"
+	"github.com/k81/orm"
 )
 
 var (

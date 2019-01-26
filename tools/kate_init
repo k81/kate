@@ -46,6 +46,9 @@ github.com/sony/gobreaker
 github.com/ugorji/go/codec
 github.com/julienschmidt/httprouter
 github.com/huandu/goroutine
+github.com/k81/govalidator
+github.com/k81/httpclient
+github.com/k81/orm
 gopkg.in/yaml.v2
 )
 
