@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/k81/kate/log"
 )
 
 func debugLogQueies(
@@ -26,7 +24,7 @@ func debugLogQueies(
 		flag = "FAIL"
 	}
 
-	log.Debug(ctx, "debug sql",
+	logger.Debug(ctx, "debug sql",
 		"db", dbName,
 		"flag", flag,
 		"operation", operation,

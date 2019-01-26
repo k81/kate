@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"time"
-
-	"github.com/k81/kate/log"
 )
 
 // Define common vars
@@ -17,7 +15,6 @@ var (
 	DebugSQLBuilder  = false
 	DefaultRowsLimit = 1000
 	DefaultTimeLoc   = time.Local
-	mctx             = log.SetContext(context.Background(), "module", "orm")
 )
 
 // Ormer define the orm interface
