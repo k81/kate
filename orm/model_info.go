@@ -33,6 +33,19 @@ func newModelInfo(val reflect.Value) (mi *modelInfo) {
 	return
 }
 
+// set auto auto field
+func (mi *modelInfo) setAutoField(ind reflect.Value, id int64) {
+	if mi.fields.auto != nil {
+		autoVal := ind.FieldByIndex(mi.fields.auto.fieldIndex)
+		switch autoVal.Kind() {
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			autoVal.SetUint(uint64(id))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			autoVal.SetInt(int64(id))
+		}
+	}
+}
+
 // getExistPk return the pk's column and value, and check if has a valid value.
 func (mi *modelInfo) getExistPk(ind reflect.Value) (column string, value interface{}, exist bool) {
 	fi := mi.fields.pk
@@ -44,7 +57,7 @@ func (mi *modelInfo) getTableByInd(ind reflect.Value) string {
 	var tableName string
 
 	if mi.sharded {
-		tableSuffix := getTableSuffix(ind)
+		tableSuffix := getTableSuffix(ind.Addr())
 		if tableSuffix == "" {
 			panic(ErrNoTableSuffix(mi.table))
 		}
@@ -111,6 +124,14 @@ func (mi *modelInfo) addFields(ind reflect.Value, mName string, index []int) {
 				mi.fields.pk = fi
 			}
 		}
+		if fi.auto {
+			if mi.fields.auto != nil {
+				err = fmt.Errorf("one model must have one auto field only")
+				break
+			} else {
+				mi.fields.auto = fi
+			}
+		}
 	}
 
 	if err != nil {
@@ -150,7 +171,7 @@ func (mi *modelInfo) getValues(ind reflect.Value, anyNames []string) []interface
 
 		value := ind.FieldByIndex(fi.fieldIndex).Interface()
 		if fi.json {
-			value = getJSONValue(value)
+			value = getJSONValue(value, fi.jsonOmitEmpty)
 		}
 
 		values[i] = value
@@ -177,7 +198,7 @@ func (mi *modelInfo) getValueContainers(ind reflect.Value, columns []string) ([]
 				dynColumns = append(dynColumns, fi.column)
 				field.Set(reflect.ValueOf(container))
 			}
-			container = getJSONValue(container)
+			container = getJSONValue(container, fi.jsonOmitEmpty)
 		}
 		containers[i] = container
 	}
@@ -247,8 +268,11 @@ func (mi *modelInfo) getOrderByCols(orders []string) []string {
 	cols := make([]string, 0, len(orders))
 	for _, order := range orders {
 		direction := "ASC"
-		if order[0] == '-' {
+		switch order[0] {
+		case '-':
 			direction = "DESC"
+			order = order[1:]
+		case '+':
 			order = order[1:]
 		}
 

@@ -40,11 +40,8 @@ func (pi *preparedInserter) Insert(md interface{}) (int64, error) {
 	if err != nil {
 		return id, err
 	}
-	if id > 0 {
-		if pi.mi.fields.pk.auto {
-			ind.FieldByIndex(pi.mi.fields.pk.fieldIndex).SetInt(id)
-		}
-	}
+
+	pi.mi.setAutoField(ind, id)
 	return id, nil
 }
 

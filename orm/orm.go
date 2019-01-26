@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+
+	"github.com/k81/kate/log"
 )
 
 // Define common vars
@@ -15,6 +17,7 @@ var (
 	DebugSQLBuilder  = false
 	DefaultRowsLimit = 1000
 	DefaultTimeLoc   = time.Local
+	mctx             = log.SetContext(context.Background(), "module", "orm")
 )
 
 // Ormer define the orm interface
@@ -53,8 +56,8 @@ type Ormer interface {
 	Delete(md interface{}, cols ...string) (int64, error)
 	// return a QuerySeter for table operations.
 	// table name can be string or struct.
-	// e.g. QueryTable("user"), QueryTable(&user{}) or QueryTable((*User)(nil)),
-	QueryTable(ptrStructOrTableName interface{}) QuerySetter
+	// e.g. QueryTable(&user{}) or QueryTable((*User)(nil)),
+	QueryTable(ptrStruct interface{}) QuerySetter
 	// switch to another registered database driver by given name.
 	Using(name string)
 	// begin transaction
@@ -95,10 +98,10 @@ func (o *orm) getMiInd(md interface{}, needPtr bool) (mi *modelInfo, ind reflect
 		panic(fmt.Errorf("<Ormer> cannot use non-ptr model struct `%s`", getFullName(typ)))
 	}
 
-	name := getFullName(typ)
-	mi, ok := modelCache.getByFullName(name)
+	fullName := getFullName(typ)
+	mi, ok := modelCache.get(fullName)
 	if !ok {
-		panic(fmt.Errorf("<Ormer> table: `%s` not found, maybe not RegisterModel", name))
+		panic(fmt.Errorf("<Ormer> model `%s` registered", fullName))
 	}
 	return mi, ind
 }
@@ -140,14 +143,9 @@ func (o *orm) Insert(md interface{}) (int64, error) {
 		return id, err
 	}
 
-	o.setPk(mi, ind, id)
+	mi.setAutoField(ind, id)
 
 	return id, nil
-}
-
-// set auto pk field
-func (o *orm) setPk(mi *modelInfo, ind reflect.Value, id int64) {
-	ind.FieldByIndex(mi.fields.pk.fieldIndex).SetInt(id)
 }
 
 // insert some models to database
@@ -194,33 +192,27 @@ func (o *orm) Delete(md interface{}, cols ...string) (int64, error) {
 	if !o.isTx {
 		o.Using(mi.db)
 	}
-	num, err := mi.Delete(o.ctx, o.db, ind, cols)
-	if err != nil {
-		return num, err
-	}
-	if num > 0 {
-		o.setPk(mi, ind, 0)
-	}
-	return num, nil
+	return mi.Delete(o.ctx, o.db, ind, cols)
 }
 
-func (o *orm) QueryTable(ptrStructOrTableName interface{}) (qs QuerySetter) {
-	var name string
-	if table, ok := ptrStructOrTableName.(string); ok {
-		name = snakeString(table)
-		if mi, ok := modelCache.get(name); ok {
-			qs = newQuerySetter(o, mi)
-		}
-	} else {
-		name = getFullName(indirectType(reflect.TypeOf(ptrStructOrTableName)))
-		if mi, ok := modelCache.getByFullName(name); ok {
-			qs = newQuerySetter(o, mi)
-		}
+func (o *orm) QueryTable(ptrStruct interface{}) QuerySetter {
+	typ := reflect.TypeOf(ptrStruct)
+	if typ.Kind() != reflect.Ptr {
+		panic(fmt.Errorf("<Ormer.QueryTable> must be struct ptr, but got %v", typ))
 	}
-	if qs == nil {
-		panic(fmt.Errorf("<Ormer.QueryTable> table name: `%s` not exists", name))
+	elemTyp := typ.Elem()
+	if elemTyp.Kind() != reflect.Struct {
+		panic(fmt.Errorf("<Ormer.QueryTable> must be struct ptr, but got %v", typ))
 	}
-	return
+
+	fullName := getFullName(elemTyp)
+	mi, ok := modelCache.get(fullName)
+	if !ok {
+		panic(fmt.Errorf("<Ormer.QueryTable> model not registered: `%s`", fullName))
+	}
+
+	qs := newQuerySetter(o, mi)
+	return qs
 }
 
 func (o *orm) Using(dbName string) {

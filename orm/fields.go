@@ -5,6 +5,7 @@ import "strings"
 // field info collection
 type fields struct {
 	pk        *fieldInfo
+	auto      *fieldInfo
 	columns   map[string]*fieldInfo
 	fields    map[string]*fieldInfo
 	fieldsLow map[string]*fieldInfo

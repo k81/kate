@@ -10,8 +10,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type obj struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
+type anyObj struct {
+	ID      int64 `orm:"column(id);pk"`
+	ObjOmit obj   `orm:"column(obj_omit);json(omitempty)"`
+	Obj     obj   `orm:"column(obj);json"`
+}
+
+func (o *anyObj) TableName() string {
+	return "any_obj"
+}
+
 type shardedPerson struct {
-	ID        int64  `orm:"column(id);pk"`
+	ID        int64  `orm:"column(id);pk;auto"`
 	PersonID  int64  `orm:"column(person_id)"`
 	Name      string `orm:"column(name)"`
 	Age       int    `orm:"column(age)"`
@@ -62,6 +77,15 @@ func TestInsert(t *testing.T) {
 	id, err = db.Insert(person3)
 	require.NoError(t, err, "insert person3 failed")
 	require.Equal(t, id, person3.ID, "check person3.ID")
+
+	persons := []*shardedPerson{
+		{PersonID: 3, Name: "multi_3"},
+		{PersonID: 7, Name: "multi_7"},
+		{PersonID: 11, Name: "multi_11"},
+	}
+
+	_, err = db.InsertMulti(10, persons)
+	require.NoError(t, err, "insertMulti persons failed")
 
 	for i := 0; i < 4; i++ {
 		tableSuffix := strconv.Itoa(i)
@@ -218,12 +242,45 @@ func TestQueryTable(t *testing.T) {
 	require.Equal(t, int64(0), rowsDeleted, "rowsDeleted != 0")
 }
 
+func TestJsonOmit(t *testing.T) {
+	db := NewOrm(context.TODO())
+	db.QueryTable(new(anyObj)).Delete()
+
+	obj := &anyObj{
+		ID:      1,
+		ObjOmit: obj{"", 0},
+		Obj:     obj{"", 0},
+	}
+	_, err := db.Insert(obj)
+	require.NoError(t, err)
+}
+
+func TestRawQueryRows(t *testing.T) {
+	db := NewOrm(context.TODO())
+	db.QueryTable(new(anyObj)).Delete()
+
+	obj := &anyObj{
+		ID:  10,
+		Obj: obj{"helloworld", 100},
+	}
+	_, err := db.Insert(obj)
+	require.NoError(t, err)
+
+	var objs []anyObj
+	err = db.Raw("select obj from any_obj where id = ?", 10).QueryRows(&objs)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(objs))
+	require.Equal(t, "helloworld", objs[0].Obj.Name)
+	require.Equal(t, 100, objs[0].Obj.Value)
+}
+
 func TestMain(m *testing.M) {
 	RegisterDB("default", "mysql", "orm_test:orm_test@tcp(127.0.0.1:3306)/orm_test?timeout=5s&readTimeout=15s&writeTimeout=15s", 20, 100)
 	RegisterModel("default", new(shardedPerson))
 	RegisterModel("default", new(jsonModel))
 	RegisterModel("default", new(mapJsonModel))
 	RegisterModel("default", new(dynamicModel))
+	RegisterModel("default", new(anyObj))
 	DebugSQLBuilder = true
 	os.Exit(m.Run())
 }

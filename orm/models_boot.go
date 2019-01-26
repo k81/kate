@@ -3,7 +3,6 @@ package orm
 import (
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 )
 
@@ -34,19 +33,14 @@ func registerModel(PrefixOrSuffix, dbName string, model interface{}, isPrefix bo
 		}
 	}
 	// models's fullname is pkgpath + struct name
-	name := getFullName(typ)
-	if _, ok := modelCache.getByFullName(name); ok {
-		panic(fmt.Errorf("register model: model `%s` repeat register, must be unique", name))
-	}
-
-	if _, ok := modelCache.get(table); ok {
-		fmt.Printf("register model: table name `%s` repeat register, must be unique\n", table)
-		os.Exit(2)
+	fullName := getFullName(typ)
+	if _, ok := modelCache.get(fullName); ok {
+		panic(fmt.Errorf("register model: model `%s` repeat register, must be unique", fullName))
 	}
 
 	mi := newModelInfo(val)
 	if mi.fields.pk == nil {
-		panic(fmt.Errorf("register model: `%s` need a primary key field", name))
+		panic(fmt.Errorf("register model: `%s` need a primary key field", fullName))
 	}
 
 	mi.db = dbName
@@ -55,7 +49,7 @@ func registerModel(PrefixOrSuffix, dbName string, model interface{}, isPrefix bo
 	mi.model = model
 	mi.sharded = isSharded(val)
 
-	modelCache.set(table, mi)
+	modelCache.add(mi)
 }
 
 // boostrap models

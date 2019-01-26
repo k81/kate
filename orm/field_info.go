@@ -10,17 +10,18 @@ var errSkipField = errors.New("skip field")
 
 // single field info
 type fieldInfo struct {
-	mi         *modelInfo
-	fieldIndex []int
-	name       string
-	fullName   string
-	column     string
-	addrValue  reflect.Value
-	sf         reflect.StructField
-	pk         bool
-	auto       bool
-	json       bool
-	dynamic    bool
+	mi            *modelInfo
+	fieldIndex    []int
+	name          string
+	fullName      string
+	column        string
+	addrValue     reflect.Value
+	sf            reflect.StructField
+	pk            bool
+	auto          bool
+	json          bool
+	jsonOmitEmpty bool
+	dynamic       bool
 }
 
 // new field info
@@ -55,6 +56,9 @@ func newFieldInfo(mi *modelInfo, field reflect.Value, sf reflect.StructField, mN
 	fi.pk = attrs["pk"]
 	fi.auto = attrs["auto"]
 	fi.json = attrs["json"]
+	if tags["json"] == "omitempty" {
+		fi.jsonOmitEmpty = true
+	}
 
 	if fi.json {
 		fi.dynamic = sf.Tag.Get("dynamic") == "true"

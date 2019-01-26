@@ -137,7 +137,7 @@ func (rq *rawQueryer) QueryRows(container interface{}) error {
 	)
 
 	if val.Kind() != reflect.Ptr || ind.Kind() != reflect.Slice || ind.Len() != 0 {
-		panic(fmt.Errorf("<RawQueryer> QueryRows() container should be a ptr of empty slice"))
+		panic(fmt.Errorf("<RawQueryer> QueryRows() container should be a ptr of empty struct slice"))
 	}
 
 	typ := ind.Type().Elem()
@@ -147,9 +147,11 @@ func (rq *rawQueryer) QueryRows(container interface{}) error {
 	case reflect.Struct:
 		isPtr = false
 		fullName = getFullName(typ)
+	default:
+		panic(fmt.Errorf("<RawQueryer> QueryRows() container should be a ptr of empty struct slice"))
 	}
 
-	mi, ok := modelCache.getByFullName(fullName)
+	mi, ok := modelCache.get(fullName)
 	if !ok {
 		panic(fmt.Errorf("<RawQueryer> model `%v` not registered", fullName))
 	}
@@ -191,6 +193,10 @@ func (rq *rawQueryer) QueryRows(container interface{}) error {
 		} else {
 			slice = reflect.Append(slice, elemInd)
 		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
 	}
 
 	ind.Set(slice)

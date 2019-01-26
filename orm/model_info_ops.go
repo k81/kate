@@ -425,6 +425,10 @@ func (mi *modelInfo) ReadOne(ctx context.Context, db dbQueryer, qs *querySetter,
 		ind.Set(elemInd)
 	}
 
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -494,6 +498,10 @@ func (mi *modelInfo) ReadBatch(ctx context.Context, db dbQueryer, qs *querySette
 		} else {
 			slice = reflect.Append(slice, elemInd)
 		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
 	}
 
 	ind.Set(slice)

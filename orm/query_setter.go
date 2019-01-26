@@ -99,6 +99,9 @@ type QuerySetter interface {
 
 var _ QuerySetter = new(querySetter)
 
+// DefaultLimit the default limit batch size, if zero, then limit is disabled
+var DefaultLimit = 1000
+
 // real query struct
 type querySetter struct {
 	mi          *modelInfo
@@ -228,6 +231,9 @@ func (qs *querySetter) PrepareInsert() (Inserter, error) {
 // All query all data and map to containers.
 // cols means the columns when querying.
 func (qs *querySetter) All(container interface{}, cols ...string) error {
+	if qs.limit == 0 && DefaultLimit != 0 {
+		qs.limit = DefaultLimit
+	}
 	return qs.mi.ReadBatch(qs.orm.ctx, qs.orm.db, qs, qs.cond, container, cols)
 }
 

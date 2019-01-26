@@ -25,66 +25,33 @@ const (
 
 var (
 	modelCache = &_modelCache{
-		cache:           make(map[string]*modelInfo),
-		cacheByFullName: make(map[string]*modelInfo),
+		cache: make(map[string]*modelInfo),
 	}
 )
 
 // model info collection
 type _modelCache struct {
-	sync.RWMutex    // only used outsite for bootStrap
-	orders          []string
-	cache           map[string]*modelInfo
-	cacheByFullName map[string]*modelInfo
-	done            bool
-}
-
-// get all model info
-func (mc *_modelCache) all() map[string]*modelInfo {
-	m := make(map[string]*modelInfo, len(mc.cache))
-	for k, v := range mc.cache {
-		m[k] = v
-	}
-	return m
-}
-
-// get ordered model info
-func (mc *_modelCache) allOrdered() []*modelInfo {
-	m := make([]*modelInfo, 0, len(mc.orders))
-	for _, table := range mc.orders {
-		m = append(m, mc.cache[table])
-	}
-	return m
-}
-
-// get model info by table name
-func (mc *_modelCache) get(table string) (mi *modelInfo, ok bool) {
-	mi, ok = mc.cache[table]
-	return
+	sync.RWMutex // only used outsite for bootStrap
+	cache        map[string]*modelInfo
+	done         bool
 }
 
 // get model info by full name
-func (mc *_modelCache) getByFullName(name string) (mi *modelInfo, ok bool) {
-	mi, ok = mc.cacheByFullName[name]
+func (mc *_modelCache) get(fullName string) (mi *modelInfo, ok bool) {
+	mi, ok = mc.cache[fullName]
 	return
 }
 
-// set model info to collection
-func (mc *_modelCache) set(table string, mi *modelInfo) *modelInfo {
-	oldMi := mc.cache[table]
-	mc.cache[table] = mi
-	mc.cacheByFullName[mi.fullName] = mi
-	if oldMi == nil {
-		mc.orders = append(mc.orders, table)
-	}
+// add model info to collection
+func (mc *_modelCache) add(mi *modelInfo) *modelInfo {
+	oldMi := mc.cache[mi.fullName]
+	mc.cache[mi.fullName] = mi
 	return oldMi
 }
 
 // clean all model info.
 func (mc *_modelCache) clean() {
-	mc.orders = make([]string, 0)
 	mc.cache = make(map[string]*modelInfo)
-	mc.cacheByFullName = make(map[string]*modelInfo)
 	mc.done = false
 }
 

@@ -8,15 +8,20 @@ import (
 	"github.com/k81/kate/log"
 )
 
+const (
+	TagTypeNoArgs       = 1
+	TagTypeWithArgs     = 2
+	TagTypeOptionalArgs = 3
+)
+
 // 1 is attr
 // 2 is tag
 var supportTag = map[string]int{
-	"-":      1,
-	"pk":     1,
-	"auto":   1,
-	"json":   1,
-	"column": 2,
-	"type":   2,
+	"-":      TagTypeNoArgs,
+	"pk":     TagTypeNoArgs,
+	"auto":   TagTypeNoArgs,
+	"json":   TagTypeOptionalArgs,
+	"column": TagTypeWithArgs,
 }
 
 // get reflect.Type name with package path.
@@ -45,12 +50,7 @@ func isSharded(val reflect.Value) bool {
 	return false
 }
 
-func getTableSuffix(ind reflect.Value) string {
-	if !ind.CanAddr() {
-		return ""
-	}
-
-	val := ind.Addr()
+func getTableSuffix(val reflect.Value) string {
 	if fun := val.MethodByName("TableSuffix"); fun.IsValid() {
 		vals := fun.Call([]reflect.Value{})
 		if len(vals) > 0 && vals[0].Kind() == reflect.String {
@@ -78,16 +78,44 @@ func parseStructTag(data string) (attrs map[string]bool, tags map[string]string)
 			continue
 		}
 		v = strings.TrimSpace(v)
-		if t := strings.ToLower(v); supportTag[t] == 1 {
-			attrs[t] = true
-		} else if i := strings.Index(v, "("); i > 0 && strings.Index(v, ")") == len(v)-1 {
-			name := t[:i]
-			if supportTag[name] == 2 {
-				v = v[i+1 : len(v)-1]
-				tags[name] = v
-			}
-		} else {
+		var (
+			tag  string
+			args string
+		)
+
+		i := strings.Index(v, "(")
+		switch {
+		case i < 0:
+			tag = v
+		case i > 0 && strings.Index(v, ")") == (len(v)-1):
+			tag = v[:i]
+			args = v[i+1 : len(v)-1]
+		}
+
+		tagTyp, ok := supportTag[tag]
+		if !ok {
 			log.Error(context.TODO(), "unsupport orm tag", "tag", v)
+			return
+		}
+
+		switch tagTyp {
+		case TagTypeNoArgs:
+			if args != "" {
+				log.Error(context.TODO(), "tag not support argument", "tag", tag)
+				return
+			}
+			attrs[tag] = true
+		case TagTypeWithArgs:
+			if args == "" {
+				log.Error(context.TODO(), "tag missing argument", "tag", tag)
+				return
+			}
+			tags[tag] = args
+		case TagTypeOptionalArgs:
+			attrs[tag] = true
+			if args != "" {
+				tags[tag] = args
+			}
 		}
 	}
 	return

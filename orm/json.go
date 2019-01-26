@@ -12,11 +12,23 @@ import (
 
 // JSONValue is the json wrapper
 type JSONValue struct {
-	addr interface{}
+	addr      interface{}
+	omitEmpty bool
 }
 
 // Value implements sql.Valuer interface
 func (jv *JSONValue) Value() (driver.Value, error) {
+	if jv.omitEmpty {
+		if jv.addr == nil {
+			return "", nil
+		}
+
+		ind := reflect.Indirect(reflect.ValueOf(jv.addr))
+		if IsEmptyValue(ind) {
+			return "", nil
+		}
+	}
+
 	data, err := json.Marshal(jv.addr)
 	if err != nil {
 		return nil, err
@@ -80,6 +92,9 @@ func parseJSON(r io.Reader, ptr interface{}) error {
 	return nil
 }
 
-func getJSONValue(v interface{}) interface{} {
-	return &JSONValue{addr: v}
+func getJSONValue(v interface{}, omitEmpty bool) interface{} {
+	return &JSONValue{
+		addr:      v,
+		omitEmpty: omitEmpty,
+	}
 }
