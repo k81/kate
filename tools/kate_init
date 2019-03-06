@@ -49,6 +49,7 @@ github.com/huandu/goroutine
 github.com/k81/govalidator
 github.com/k81/httpclient
 github.com/k81/orm
+github.com/k81/log
 gopkg.in/yaml.v2
 )
 
