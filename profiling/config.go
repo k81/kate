@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/k81/kate/config"
-	"github.com/k81/kate/log"
 )
 
 const (
@@ -36,7 +35,7 @@ func GetConfig() *Config {
 	v := config.Get(ConfKey)
 	conf, ok := v.(*Config)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*Config")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*Config")
 	}
 	return conf
 }

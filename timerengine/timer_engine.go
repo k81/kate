@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/taskengine"
 	"github.com/k81/kate/utils"
+	"github.com/k81/log"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	mctx = log.SetContext(context.Background(), "module", "timerengine")
+	mctx = context.Background()
 )
 
 type request struct {
@@ -34,6 +34,7 @@ type TimerEngine struct {
 	tickIndex uint32
 	executors *taskengine.TaskEngine
 	taskIdSeq uint64
+	logger    *log.Logger
 	ctx       context.Context
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
@@ -44,14 +45,13 @@ func New(name string, concurrencyLevel int) *TimerEngine {
 		newctx, cancel = context.WithCancel(mctx)
 	)
 
-	newctx = log.SetContext(newctx, "name", name)
-
 	e := &TimerEngine{
 		name:      name,
 		ticker:    time.Tick(time.Second),
 		buckets:   make([]*list.List, RingSize),
 		requests:  make(chan *request, 1024),
 		executors: taskengine.New(newctx, name, concurrencyLevel),
+		logger:    log.With("name", name),
 		ctx:       newctx,
 		cancel:    cancel,
 	}
@@ -78,17 +78,17 @@ func (e *TimerEngine) Stop() {
 }
 
 func (e *TimerEngine) loop() {
-	log.Info(e.ctx, "timer engine loop started")
+	e.logger.Info(e.ctx, "timer engine loop started")
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatal(e.ctx, "panic", "error", r, "stack", utils.GetPanicStack())
+			e.logger.Fatal(e.ctx, "panic", "error", r, "stack", utils.GetPanicStack())
 		}
 
 		e.cancel()
 		e.executors.Shutdown()
 		e.wg.Done()
-		log.Info(e.ctx, "main loop stopped")
+		e.logger.Info(e.ctx, "main loop stopped")
 	}()
 
 	for {
@@ -109,8 +109,8 @@ func (e *TimerEngine) loop() {
 
 				req.result <- task
 
-				if log.Enabled(log.TraceLevel) {
-					log.Trace(e.ctx, "add timer task",
+				if e.logger.Enabled(log.LevelTrace) {
+					e.logger.Trace(e.ctx, "add timer task",
 						"task_id", task.Id,
 						"delay", req.delay,
 						"tick_bucket_index", tickIndex,
@@ -133,13 +133,13 @@ func (e *TimerEngine) loop() {
 						tBegin = time.Now()
 					)
 
-					if log.Enabled(log.TraceLevel) {
-						log.Trace(e.ctx, "schedule for tick started", "tick_bucket_index", tickIndex, "task_count", tasks.Len())
+					if e.logger.Enabled(log.LevelTrace) {
+						e.logger.Trace(e.ctx, "schedule for tick started", "tick_bucket_index", tickIndex, "task_count", tasks.Len())
 					}
 
-					if log.Enabled(log.TraceLevel) {
+					if e.logger.Enabled(log.LevelTrace) {
 						defer func() {
-							log.Trace(e.ctx, "schedule for tick stopped", "tick_bucket_index", tickIndex, "duration_ms", int64(time.Since(tBegin)/time.Millisecond))
+							e.logger.Trace(e.ctx, "schedule for tick stopped", "tick_bucket_index", tickIndex, "duration_ms", int64(time.Since(tBegin)/time.Millisecond))
 						}()
 					}
 

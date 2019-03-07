@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/k81/kate/dynconf"
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/utils"
+	"github.com/k81/log"
 )
 
 var CONF_ROOT string

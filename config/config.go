@@ -4,15 +4,13 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/k81/kate/log"
-
 	goyaml "gopkg.in/yaml.v2"
 )
 
 var (
 	configFilePath string
 	app            string
-	mctx           = log.SetContext(context.Background(), "module", "config")
+	mctx           = context.Background()
 )
 
 /*************************************************

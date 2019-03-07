@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/k81/kate/config"
-	"github.com/k81/kate/log"
 )
 
 const (
@@ -45,7 +44,7 @@ func GetHttpConfig() *HttpConfig {
 	v := config.Get(ConfKeyHttp)
 	conf, ok := v.(*HttpConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*HttpConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*HttpConfig")
 	}
 	return conf
 }

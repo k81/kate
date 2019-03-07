@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/k81/kate/config"
-	"github.com/k81/kate/log"
-	"github.com/k81/kate/orm"
+	"github.com/k81/orm"
 )
 
 const (
@@ -42,7 +41,7 @@ func GetBasicConfig() *BasicConfig {
 	v := config.Get(ConfKeyDbBasic)
 	conf, ok := v.(*BasicConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*BasicConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*BasicConfig")
 	}
 	return conf
 }
@@ -72,7 +71,7 @@ func GetPoolsConfig() *PoolsConfig {
 	v := config.Get(ConfKeyDbPools)
 	conf, ok := v.(*PoolsConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*PoolsConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*PoolsConfig")
 	}
 	return conf
 }

@@ -13,16 +13,17 @@ import (
 
 	"context"
 
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/retry"
+	"github.com/k81/log"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/sony/gobreaker"
 )
 
 var (
-	mctx = log.SetContext(context.Background(), "module", "redismgr")
-	gMgr atomic.Value
+	mctx   = context.Background()
+	logger *log.Logger
+	gMgr   atomic.Value
 )
 
 // redis连接池管理器
@@ -63,7 +64,7 @@ func newRedisConnMgr(addrs []string, pc *PoolsConfig) *RedisMgr {
 	copy(mgr.addrs, addrs)
 
 	for idx, addr := range mgr.addrs {
-		log.Info(mctx, "creating redis pool", "redis_server", addr)
+		logger.Info(mctx, "creating redis pool", "redis_server", addr)
 
 		mgr.breakers[idx] = gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:        fmt.Sprint("circuit breaker redis-", addr),
@@ -74,7 +75,7 @@ func newRedisConnMgr(addrs []string, pc *PoolsConfig) *RedisMgr {
 				return counts.TotalFailures >= uint32(20)
 			},
 			OnStateChange: func(name string, from, to gobreaker.State) {
-				log.Info(mctx, "circuit breaker state changed", "name", name, "from", from, "to", to)
+				logger.Info(mctx, "circuit breaker state changed", "name", name, "from", from, "to", to)
 			},
 		})
 
@@ -86,7 +87,7 @@ func newRedisConnMgr(addrs []string, pc *PoolsConfig) *RedisMgr {
 			Dial: func() (redis.Conn, error) {
 				c, err := redis.DialTimeout("tcp", addr, mgr.conf.ConnectTimeout, mgr.conf.ReadTimeout, mgr.conf.WriteTimeout)
 				if err != nil {
-					log.Error(mctx, "dail to server", "redis_server", addr, "error", err)
+					logger.Error(mctx, "dail to server", "redis_server", addr, "error", err)
 				}
 				return c, err
 			},
@@ -104,6 +105,7 @@ Return:
 Others:
 *************************************************/
 func Init() {
+	logger := log.With("module", "redismgr")
 	mgr := newRedisConnMgr(GetAddrs(), GetPoolsConfig())
 	gMgr.Store(mgr)
 }
@@ -182,7 +184,7 @@ func TryRedisCmd(ctx context.Context, strategy retry.ResettableStrategy, cmd str
 			if len(argstr) > 0 {
 				argstr = argstr[0 : len(argstr)-1]
 			}
-			log.Error(ctx, "failed to try redis cmd, retrying with another connection",
+			logger.Error(ctx, "failed to try redis cmd, retrying with another connection",
 				"cmd", cmd,
 				"args", argstr,
 				"error", err,
@@ -218,7 +220,7 @@ func TryRedisScript(ctx context.Context, strategy retry.ResettableStrategy, scri
 		}()
 
 		if reply, err = breaker.Execute(func() (interface{}, error) { return script.Do(c, keysAndArgs...) }); err != nil {
-			log.Error(ctx, "failed to try redis script, retrying with another connection",
+			logger.Error(ctx, "failed to try redis script, retrying with another connection",
 				"script", script,
 				"error", err,
 			)

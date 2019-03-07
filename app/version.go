@@ -2,8 +2,6 @@ package app
 
 import (
 	"fmt"
-
-	"github.com/k81/kate/log"
 )
 
 var (
@@ -25,7 +23,7 @@ func printVersion() {
 }
 
 func logVersion() {
-	log.Info(mctx, "app info",
+	logger.Info(mctx, "app info",
 		"version", fmt.Sprintf("%s.%s.%s", VER_MAJOR, VER_MINOR, VER_PATCH),
 		"revision", REVISION,
 		"last_author", LAST_AUTHOR,

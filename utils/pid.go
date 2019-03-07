@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/k81/kate/log"
+	"github.com/k81/log"
 )
 
 func UpdatePIDFile(ctx context.Context, pidFile string) {

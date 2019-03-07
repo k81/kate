@@ -6,8 +6,8 @@ import (
 
 	"context"
 
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/utils"
+	"github.com/k81/log"
 )
 
 type TaskEngine struct {
@@ -15,17 +15,20 @@ type TaskEngine struct {
 	name              string
 	shutdown          bool
 	concurrencyTokens chan struct{}
+	logger            *log.Logger
 	ctx               context.Context
 	cancel            context.CancelFunc
 }
 
 func New(ctx context.Context, name string, concurrencyLevel int) *TaskEngine {
 	var (
-		newctx, cancel = context.WithCancel(log.SetContext(ctx, "taskengine", name))
+		newctx, cancel = context.WithCancel(ctx)
+		logger         = log.With("taskengine", name)
 	)
 
 	engine := &TaskEngine{
 		name:   name,
+		logger: logger,
 		ctx:    newctx,
 		cancel: cancel,
 	}
@@ -38,7 +41,7 @@ func New(ctx context.Context, name string, concurrencyLevel int) *TaskEngine {
 
 func (engine *TaskEngine) Schedule(task Task) bool {
 	if engine.shutdown {
-		log.Error(engine.ctx, "already stopped, should not schedule new task")
+		engine.logger.Error(engine.ctx, "already stopped, should not schedule new task")
 		return false
 	}
 
@@ -55,7 +58,7 @@ func (engine *TaskEngine) Schedule(task Task) bool {
 func (engine *TaskEngine) run(task Task) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error(engine.ctx, "task panic:", "error", r, "stack", utils.GetPanicStack())
+			engine.logger.Error(engine.ctx, "task panic:", "error", r, "stack", utils.GetPanicStack())
 		}
 		if engine.concurrencyTokens != nil {
 			<-engine.concurrencyTokens
@@ -71,7 +74,7 @@ func (engine *TaskEngine) Shutdown() {
 		panic(fmt.Sprintf("task engine %s shutdown twice", engine.name))
 	}
 
-	log.Info(engine.ctx, "stopping")
+	engine.logger.Info(engine.ctx, "stopping")
 
 	engine.shutdown = true
 	engine.cancel()
@@ -80,5 +83,5 @@ func (engine *TaskEngine) Shutdown() {
 	if engine.concurrencyTokens != nil {
 		close(engine.concurrencyTokens)
 	}
-	log.Info(engine.ctx, "stopped")
+	engine.logger.Info(engine.ctx, "stopped")
 }

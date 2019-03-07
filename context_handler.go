@@ -7,8 +7,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-
-	"github.com/k81/kate/log"
+	"github.com/k81/log"
 )
 
 type ContextHandler interface {
@@ -41,8 +40,8 @@ func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httproute
 		defer cancel()
 
 		request = &Request{
-			Request: r,
-			Path:    params,
+			Request:  r,
+			RestVars: params,
 		}
 
 		response = &responseWriter{

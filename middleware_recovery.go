@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/utils"
+	"github.com/k81/log"
 )
 
 func Recovery(h ContextHandler) ContextHandler {

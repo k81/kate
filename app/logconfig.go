@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/k81/kate/config"
-	"github.com/k81/kate/log"
+	"github.com/k81/log"
 )
 
 const (
@@ -34,10 +34,10 @@ func NewLogConfig() (v interface{}, err error) {
 func OnLogConfigUpdate(v interface{}) {
 	conf, ok := v.(*LogConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*LogConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*LogConfig")
 	}
 
-	log.Info(mctx, "log level changed", "old_level", log.GetLevel().String(), "new_level", conf.Level)
+	logger.Info(mctx, "log level changed", "old_level", log.GetLevel().String(), "new_level", conf.Level)
 
 	log.SetLevelByName(conf.Level)
 }
@@ -46,7 +46,7 @@ func GetLogLevel() log.LevelName {
 	v := config.Get(ConfKeyLog)
 	conf, ok := v.(*LogConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*LogConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*LogConfig")
 	}
 	return conf.Level
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/k81/kate/log"
+	"github.com/k81/log"
 )
 
 func Logging(h ContextHandler) ContextHandler {

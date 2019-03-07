@@ -9,7 +9,6 @@ import (
 func MethodOnly(method string, h ContextHandler) ContextHandler {
 	f := func(ctx context.Context, w ResponseWriter, r *Request) {
 		if strings.ToUpper(r.Method) != method {
-			//log.Debug(ctx, "method not allowed", "method", r.Method)
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			_, _ = w.Write([]byte(http.StatusText(http.StatusMethodNotAllowed)))
 			return

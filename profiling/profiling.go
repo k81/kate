@@ -7,12 +7,13 @@ import (
 	_ "net/http/pprof"
 	"time"
 
-	"github.com/k81/kate/log"
+	"github.com/k81/log"
 )
 
 var (
-	mctx = log.SetContext(context.Background(), "module", "profiling")
-	addr string
+	logger *log.Logger
+	mctx   = context.Background()
+	addr   string
 )
 
 func Enabled() bool {
@@ -20,6 +21,7 @@ func Enabled() bool {
 }
 
 func Start() {
+	logger = log.With("module", "profiling")
 	go loop()
 }
 
@@ -31,9 +33,9 @@ func loop() {
 
 	addr = fmt.Sprint("0.0.0.0:", GetConfig().Port)
 
-	log.Info(mctx, "starting", "addr", addr)
+	logger.Info(mctx, "starting", "addr", addr)
 
 	if err = http.ListenAndServe(addr, nil); err != nil {
-		log.Error(mctx, "serve http profiling", "addr", addr, "error", err)
+		logger.Error(mctx, "serve http profiling", "addr", addr, "error", err)
 	}
 }

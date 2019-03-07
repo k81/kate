@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/k81/kate/config"
-	"github.com/k81/kate/log"
 )
 
 const (
@@ -67,7 +66,7 @@ func GetAddrs() []string {
 	v := config.Get(ConfKeyAddrs)
 	conf, ok := v.(*AddrsConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*AddrsConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*AddrsConfig")
 	}
 	return conf.Addrs
 }
@@ -76,7 +75,7 @@ func GetPoolsConfig() *PoolsConfig {
 	v := config.Get(ConfKeyPools)
 	conf, ok := v.(*PoolsConfig)
 	if !ok {
-		log.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*PoolsConfig")
+		logger.Fatal(mctx, "type assert failed", "got", reflect.TypeOf(v), "expect", "*PoolsConfig")
 	}
 	return conf
 }

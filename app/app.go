@@ -10,9 +10,9 @@ import (
 	"syscall"
 
 	"github.com/k81/kate/config"
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/profiling"
 	"github.com/k81/kate/utils"
+	"github.com/k81/log"
 )
 
 var (
@@ -22,10 +22,10 @@ var (
 	errFile      string
 	pidFile      string
 	confFile     string
-	logFormatter log.Formatter
-	logger       *log.FileLogger
+	logFormatter = log.PipeKVFormatter
 
-	mctx = log.SetContext(context.Background(), "module", "app")
+	logger *log.Logger
+	mctx   = context.Background()
 )
 
 func init() {
@@ -35,13 +35,14 @@ func init() {
 	errFile = path.Join(homeDir, "log", fmt.Sprint(name, ".err"))
 	pidFile = path.Join(homeDir, "run", fmt.Sprint(name, ".pid"))
 	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".yaml"))
-	logFormatter = log.KVFormatter
 }
 
 func Setup() {
 	var (
 		showVersion = flag.Bool("version", false, "show version")
 		confFile    = flag.String("config", confFile, "config file name")
+		logAppender *log.FileAppender
+		errAppender *log.FileAppender
 		err         error
 	)
 
@@ -52,13 +53,19 @@ func Setup() {
 		os.Exit(0)
 	}
 
-	if logger, err = log.NewFileLogger(logFile, errFile, logFormatter); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: create log writer, reason=%v", err)
+	if logAppender, err = log.NewFileAppender(log.LevelMask, logFile, logFormatter); err != nil {
 		os.Exit(1)
 	}
-	logger.DisableLock()
-	logger.SetRotateSignal(syscall.SIGUSR1)
-	log.SetLogger(logger)
+	logAppender.DisableLock()
+
+	if errAppender, err = log.NewFileAppender(log.LevelError|log.LevelFatal, errFile, logFormatter); err != nil {
+		os.Exit(1)
+	}
+	errAppender.DisableLock()
+
+	log.SetLogger(log.NewLogger(logAppender, errAppender))
+
+	logger = log.With("module", app)
 
 	logVersion()
 
@@ -80,30 +87,24 @@ func Wait() os.Signal {
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 		syscall.SIGTERM,
-		syscall.SIGUSR1,
 		syscall.SIGUSR2,
 		syscall.SIGHUP,
 	)
 
 	for {
 		sig := <-sigCh
-		log.Info(mctx, "got signal", "signal", sig)
+		logger.Info(mctx, "got signal", "signal", sig)
 
 		switch sig {
 		case syscall.SIGINT:
 			return sig
 		case syscall.SIGQUIT:
 			{
-				log.Info(mctx, "fetch done, ready to exit")
+				logger.Info(mctx, "fetch done, ready to exit")
 				return sig
 			}
 		case syscall.SIGTERM:
 			return sig
-		case syscall.SIGUSR1:
-			{
-				logger.Rotate()
-				log.Info(mctx, "log file rotated")
-			}
 		case syscall.SIGUSR2:
 			continue
 		case syscall.SIGHUP:

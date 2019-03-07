@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/utils"
+	"github.com/k81/log"
 )
 
 type TaskFunc func()
@@ -22,6 +22,7 @@ type TimerTask struct {
 	started   bool
 	engine    *TimerEngine
 	cancelled bool
+	logger    *log.Logger
 	ctx       context.Context
 }
 
@@ -33,7 +34,8 @@ func newTimerTask(engine *TimerEngine, cycleNum int, f TaskFunc) *TimerTask {
 		taskFunc: f,
 		cycleNum: cycleNum,
 		engine:   engine,
-		ctx:      log.SetContext(engine.ctx, "task_id", taskId),
+		logger:   engine.logger.With("task_id", taskId),
+		ctx:      engine.ctx,
 	}
 	return task
 }
@@ -76,17 +78,17 @@ func (task *TimerTask) dispose() {
 
 	if ok {
 		task.engine.execute(func() {
-			if log.Enabled(log.TraceLevel) {
-				log.Trace(task.ctx, "timer task started")
+			if task.logger.Enabled(log.LevelTrace) {
+				task.logger.Trace(task.ctx, "timer task started")
 			}
 
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error(task.ctx, "got panic", "error", r, "stack", utils.GetPanicStack())
+					task.logger.Error(task.ctx, "got panic", "error", r, "stack", utils.GetPanicStack())
 				}
 
-				if log.Enabled(log.TraceLevel) {
-					log.Trace(task.ctx, "timer task stopped")
+				if task.logger.Enabled(log.LevelTrace) {
+					task.logger.Trace(task.ctx, "timer task stopped")
 				}
 			}()
 

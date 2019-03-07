@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/k81/kate/log"
+	"github.com/k81/govalidator"
 	"github.com/k81/kate/utils"
-	validator "gopkg.in/go-playground/validator.v9"
+	"github.com/k81/log"
 )
 
 const (
@@ -19,13 +19,7 @@ const (
 	MIMEApplicationJSONCharsetUTF8 = "application/json; charset=UTF-8"
 )
 
-var validate *validator.Validate
-
 var ErrServerInternal = NewError(-1, "server internal error")
-
-func init() {
-	validate = validator.New()
-}
 
 // APIResponse represents the api response body
 type APIResponse struct {
@@ -35,8 +29,7 @@ type APIResponse struct {
 }
 
 // BaseHandler is the enhanced version of ngs.BaseController
-type BaseHandler struct {
-}
+type BaseHandler struct{}
 
 // ParseRequest parses and validates the api request
 // nolint:lll,gocyclo
@@ -64,10 +57,10 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *Request, req interfac
 	}
 
 	// decode rest var
-	if len(r.Path) > 0 {
+	if len(r.RestVars) > 0 {
 		data := make(map[string]interface{})
-		for i := range r.Path {
-			data[r.Path[i].Key] = r.Path[i].Value
+		for i := range r.RestVars {
+			data[r.RestVars[i].Key] = r.RestVars[i].Value
 		}
 
 		if err := utils.Bind(req, "rest", data); err != nil {
@@ -77,7 +70,7 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *Request, req interfac
 	}
 
 	// validate
-	if err := validate.Struct(req); err != nil {
+	if err := govalidator.ValidateStruct(req); err != nil {
 		log.Error(ctx, "validate request", "error", err)
 		return err
 	}
