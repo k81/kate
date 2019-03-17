@@ -20,7 +20,7 @@ var (
 )
 
 func main() {
-	app.Setup()
+	app.Setup(config.Configer)
 
 	defer func() {
 		if r := recover(); r != nil {

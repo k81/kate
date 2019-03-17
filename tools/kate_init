@@ -7,13 +7,6 @@ GOPATH=${GOPATH#:}
 
 echo '[1] pulling 3rd-party package'
 deps=(
-github.com/Shopify/sarama
-github.com/Shopify/toxiproxy/client
-github.com/coreos/etcd/client
-github.com/coreos/etcd/pkg/pathutil
-github.com/coreos/etcd/pkg/testutil
-github.com/coreos/etcd/pkg/types
-github.com/coreos/etcd/version
 github.com/coreos/go-semver/semver
 github.com/davecgh/go-spew/spew
 github.com/davecgh/go-spew/spew/testdata
@@ -28,29 +21,18 @@ github.com/facebookgo/httpdown
 github.com/facebookgo/stats
 github.com/garyburd/redigo/internal
 github.com/garyburd/redigo/redis
-github.com/golang/protobuf/proto
-github.com/golang/protobuf/proto/proto3_proto
-github.com/golang/protobuf/proto/testdata
-github.com/golang/protobuf/protoc-gen-go/descriptor
-github.com/golang/protobuf/ptypes
-github.com/golang/protobuf/ptypes/any
-github.com/golang/protobuf/ptypes/duration
-github.com/golang/protobuf/ptypes/timestamp
-github.com/golang/snappy
 github.com/kardianos/osext
 github.com/klauspost/crc32
 github.com/pierrec/lz4
 github.com/pierrec/xxHash/xxHash32
 github.com/rcrowley/go-metrics
 github.com/sony/gobreaker
-github.com/ugorji/go/codec
 github.com/julienschmidt/httprouter
 github.com/huandu/goroutine
 github.com/k81/govalidator
 github.com/k81/httpclient
 github.com/k81/orm
 github.com/k81/log
-gopkg.in/yaml.v2
 )
 
 for d in ${deps[*]}
@@ -70,7 +52,7 @@ if [ ! -d ${GOPATH}/src/golang.org/x/net/context ]; then
     popd >/dev/null 2>&1
 fi
 
-go get -u -insecure github.com/k81/kate
+go get -insecure github.com/k81/kate
 
 echo '[2] initializing project'
 KATE_DIR=$GOPATH/src/github.com/k81/kate
@@ -99,14 +81,6 @@ function do_inflate() {
 export -f do_inflate
 find . -type f -print |grep -v .git|xargs -n 1 -P 10 -I {} bash -c 'do_inflate "$@"' _ {}
 
-ENVS=(
-prod
-dev
-qa
-preview
-)
-for ENV in ${ENVS[*]} 
-do
-    mv ./conf/$ENV/__APP_NAME__.yaml ./conf/$ENV/$APP_NAME.yaml
-done
+mv "${APP_HOME}/cmd/__APP_NAME__/" "${APP_HOME}/cmd/${APP_NAME}/"
+
 echo '[3] done.'

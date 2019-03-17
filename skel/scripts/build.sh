@@ -15,7 +15,7 @@ echo "environment = $APP_ENV"
 PROJECT_HOME=$(cd $(dirname $0) && cd .. && pwd -P)
 PKG_HOME="$PROJECT_HOME/output"
 #程序名称
-APP=unirecon
+APP=__APP_NAME__
 
 GO=$GOROOT/bin/go
 

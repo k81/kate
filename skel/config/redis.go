@@ -3,8 +3,8 @@ package config
 import (
 	"time"
 
-	"git.xiaojukeji.com/server/unirecon/common/redismgr"
-	"git.xiaojukeji.com/server/unirecon/common/utils"
+	"github.com/k81/kate/redismgr"
+	"github.com/k81/kate/utils"
 	"gopkg.in/ini.v1"
 )
 

@@ -9,6 +9,7 @@ import (
 	"path"
 	"syscall"
 
+	"github.com/k81/kate/configer"
 	"github.com/k81/log"
 	"github.com/kardianos/osext"
 )
@@ -38,30 +39,38 @@ func init() {
 	}
 	homeDir = path.Dir(path.Dir(bin))
 	name = path.Base(bin)
+	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".conf"))
 }
 
 // Setup prepare for the application startup
-func Setup(configLoader ConfigLoader) {
-	logFile = path.Join(homeDir, "log", fmt.Sprint(name, ".log"))
-	errFile = path.Join(homeDir, "log", fmt.Sprint(name, ".log.wf"))
-	pidFile = path.Join(homeDir, "run", fmt.Sprint(name, ".pid"))
-	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".conf"))
+func Setup(configer configer.Configer) {
+	var (
+		showVersion bool
+		err         error
+	)
 
-	showVersion := flag.Bool("version", false, "show version")
-	pConfFile := flag.String("config", confFile, "config file name")
+	flag.BoolVar(&showVersion, "version", false, "show version")
+	flag.StringVar(&confFile, "config", confFile, "config file name")
 
 	flag.Parse()
 
-	if *showVersion {
+	if showVersion {
 		printVersion()
 		os.Exit(0)
 	}
 
-	initLogger(logFile, errFile, logFormatter)
+	if err = configer.Load(confFile); err != nil {
+		log.Fatal(mctx, "load config failed", "error", err)
+	}
 
+	pidFile = configer.MustGet("main.pid_file", path.Join(homeDir, "run", fmt.Sprint(name, ".pid")))
 	updatePIDFile(pidFile)
 
-	configLoader.Load(*pConfFile)
+	logFile = configer.MustGet("log.log_file", path.Join(homeDir, "log", fmt.Sprint(name, ".log")))
+	errFile = configer.MustGet("log.err_file", path.Join(homeDir, "log", fmt.Sprint(name, ".log.wf")))
+	initLogger(logFile, errFile, logFormatter)
+
+	log.SetLevelByName(configer.MustGet("log.level", "DEBUG"))
 
 	logVersion()
 }

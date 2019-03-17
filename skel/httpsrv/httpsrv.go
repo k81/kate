@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/facebookgo/grace/gracehttp"
+	"github.com/k81/kate"
 	"github.com/k81/log"
 
 	"__PROJECT_DIR__/config"
@@ -17,14 +18,13 @@ var (
 // ListenAndServe start the http server and wait for exit
 func ListenAndServe() {
 	// 定义中间件栈，可根据需要在下面追加
-	c := NewChain(
-		Trace,
-		Logging,
-		Recovery,
+	c := kate.NewChain(
+		kate.Logging,
+		kate.Recovery,
 	)
 
 	// 注册Handler
-	router := NewRESTRouter(mctx)
+	router := kate.NewRESTRouter(mctx)
 	router.SetMaxBodyBytes(config.HTTP.MaxBodyBytes)
 	router.GET("/hello", c.Then(&HelloHandler{}))
 
