@@ -63,14 +63,14 @@ func Setup(configer configer.Configer) {
 		log.Fatal(mctx, "load config failed", "error", err)
 	}
 
-	pidFile = configer.MustGet("main.pid_file", path.Join(homeDir, "run", fmt.Sprint(name, ".pid")))
-	updatePIDFile(pidFile)
-
 	logFile = configer.MustGet("log.log_file", path.Join(homeDir, "log", fmt.Sprint(name, ".log")))
 	errFile = configer.MustGet("log.err_file", path.Join(homeDir, "log", fmt.Sprint(name, ".log.wf")))
 	initLogger(logFile, errFile, logFormatter)
 
 	log.SetLevelByName(configer.MustGet("log.level", "DEBUG"))
+
+	pidFile = configer.MustGet("main.pid_file", path.Join(homeDir, "run", fmt.Sprint(name, ".pid")))
+	updatePIDFile(pidFile)
 
 	logVersion()
 }

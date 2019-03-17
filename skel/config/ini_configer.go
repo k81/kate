@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/k81/kate/utils"
-	"github.com/k81/log"
 	"gopkg.in/ini.v1"
 )
 
@@ -33,7 +32,6 @@ func (c *iniConfiger) Load(file string) error {
 			return fmt.Errorf("load config: section=%v, error=%v", config.SectionName(), err)
 		}
 	}
-	log.Info(mctx, "config loaded successfully")
 	return nil
 }
 
@@ -56,7 +54,7 @@ func (c *iniConfiger) MustGet(name string, defaultValue string) string {
 }
 
 func (c *iniConfiger) getKey(name string) (key *ini.Key, err error) {
-	parts := utils.Split(name, ",")
+	parts := utils.Split(name, ".")
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid key: %v, should have format: section.key", name)
 	}
