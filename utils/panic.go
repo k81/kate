@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// LocatePanic return the panic location
 func LocatePanic() string {
 	var name, file string
 	var line int
@@ -33,6 +34,7 @@ func LocatePanic() string {
 	return fmt.Sprintf("pc:%x", pc)
 }
 
+// GetPanicStack return the panic stack trace as string
 func GetPanicStack() string {
 	return string(GetStack(3))
 }

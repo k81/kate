@@ -7,10 +7,12 @@ OS := $(shell uname -s)
 APP  = __APP_NAME__
 
 GO	 = $(GOROOT)/bin/go
-BINDIR = $(HOME_DIR)/output/bin/
-BIN  = $(BINDIR)$(APP)
+LINT = golangci-lint
+OUT_DIR = $(HOME_DIR)/output
+BIN_DIR = $(OUT_DIR)/bin
+BIN  = $(BIN_DIR)/$(APP)
 
-SRC  = main.go
+UNIRECON_SRC  = $(HOME_DIR)/cmd/__APP_NAME__/main.go
 
 #程序版本号
 VER_MAJOR   = 1
@@ -41,14 +43,19 @@ else
 KATE_APP_PKG=github.com/k81/kate/app
 endif
 
-LDFLAGS  = -X $(KATE_APP_PKG).VER_MAJOR=$(VER_MAJOR)
-LDFLAGS += -X $(KATE_APP_PKG).VER_MINOR=$(VER_MINOR)
-LDFLAGS += -X $(KATE_APP_PKG).VER_PATCH=$(VER_PATCH)
-LDFLAGS += -X $(KATE_APP_PKG).REVISION=$(REVISION)
-LDFLAGS += -X $(KATE_APP_PKG).LAST_AUTHOR=$(LAST_AUTHOR)
-LDFLAGS += -X $(KATE_APP_PKG).LAST_DATE=$(LAST_DATE)
-LDFLAGS += -X $(KATE_APP_PKG).BUILD_DATE=$(BUILD_DATE)
+LDFLAGS  = -X $(KATE_APP_PKG).VersionMajor=$(VER_MAJOR)
+LDFLAGS += -X $(KATE_APP_PKG).VersionMinor=$(VER_MINOR)
+LDFLAGS += -X $(KATE_APP_PKG).VersionPatch=$(VER_PATCH)
+LDFLAGS += -X $(KATE_APP_PKG).Revision=$(REVISION)
+LDFLAGS += -X $(KATE_APP_PKG).LastAuthor=$(LAST_AUTHOR)
+LDFLAGS += -X $(KATE_APP_PKG).LastDate=$(LAST_DATE)
+LDFLAGS += -X $(KATE_APP_PKG).BuildDate=$(BUILD_DATE)
 
+lint:
+	$(LINT) run
 
 all: 
 	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN) $(SRC)
+
+clean:
+	rm -rf $(OUT_DIR)

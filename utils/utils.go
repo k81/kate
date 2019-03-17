@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Abs return the absolute value
 func Abs(v int64) int64 {
 	if v >= 0 {
 		return v
@@ -15,6 +16,7 @@ func Abs(v int64) int64 {
 	return -v
 }
 
+// Min return the minimum value
 func Min(a, b int) int {
 	if a < b {
 		return a
@@ -22,6 +24,7 @@ func Min(a, b int) int {
 	return b
 }
 
+// Max return the maximum value
 func Max(a, b int) int {
 	if a > b {
 		return a
@@ -29,6 +32,8 @@ func Max(a, b int) int {
 	return b
 }
 
+// Split split the string.
+// if empty return an empty slice instead of nil
 func Split(str string, sep string) (r []string) {
 	p := strings.Split(str, sep)
 	if len(p) == 1 && p[0] == "" {
@@ -46,12 +51,14 @@ func Split(str string, sep string) (r []string) {
 	return
 }
 
+// TrimUntil trim the prefix until find the stop character
 func TrimUntil(s string, stop string) string {
 	p := strings.SplitN(s, stop, 2)
 	n := len(p)
 	return p[n-1]
 }
 
+// RepeatWithSep repeat the `s` `count` times, and separated by `sep`
 func RepeatWithSep(s string, sep string, count int) string {
 	if count < 0 {
 		panic("negative RepeatWithSep count")
@@ -69,6 +76,7 @@ func RepeatWithSep(s string, sep string, count int) string {
 	return string(b)
 }
 
+// JoinSlice join the slice to string with separator `sep`
 func JoinSlice(slice interface{}, sep string) string {
 	var (
 		v = reflect.ValueOf(slice)

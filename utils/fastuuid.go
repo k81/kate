@@ -6,13 +6,15 @@ import (
 	"github.com/rogpeppe/fastuuid"
 )
 
-var uuid_generator = fastuuid.MustNewGenerator()
+var uuidGenerator = fastuuid.MustNewGenerator()
 
+// FastUUID generate a new UUID as []byte
 func FastUUID() [24]byte {
-	return uuid_generator.Next()
+	return uuidGenerator.Next()
 }
 
+// FastUUIDStr generate a new UUID as string
 func FastUUIDStr() string {
-	b := uuid_generator.Next()
+	b := uuidGenerator.Next()
 	return hex.EncodeToString(b[:])
 }

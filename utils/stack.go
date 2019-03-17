@@ -13,6 +13,7 @@ var (
 	dot       = []byte(".")
 )
 
+// GetStack return the stack trace of depth as []byte
 func GetStack(calldepth int) []byte {
 	buf := new(bytes.Buffer) // the returned data
 	buf.WriteString("\n")

@@ -1,7 +1,0 @@
-etcd_addrs:
-    - http://192.168.0.131:2379
-    - http://192.168.0.132:2379
-    - http://192.168.0.133:2379
-etcd_prefix: /__APP_NAME__/v1/
-watch_enabled: true
-watch_interval: 15

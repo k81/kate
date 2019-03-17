@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Rand return an random number between [min, max)
 func Rand(min, max int) int {
 	return rand.Intn(max-min) + min
 }
@@ -18,10 +19,9 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
-var (
-	randSrcPool *sync.Pool
-)
+var randSrcPool *sync.Pool
 
+// nolint:gochecknoinits
 func init() {
 	randSrcPool = &sync.Pool{
 		New: func() interface{} {
@@ -30,7 +30,9 @@ func init() {
 	}
 }
 
+// RandString return a random string of length n
 func RandString(n int) string {
+	// nolint:errcheck
 	src := randSrcPool.Get().(rand.Source)
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!

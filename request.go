@@ -6,6 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// Request defines the http request
 type Request struct {
 	*http.Request
 

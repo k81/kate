@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	defaultRedsync = New([]Pool{&DefaultPool{}})
+	defaultRedsync = New([]Pool{&defaultPool{}})
 )
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.
@@ -38,6 +38,7 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	return m
 }
 
+// NewMutex create a mutex using default redsync
 func NewMutex(name string, options ...Option) *Mutex {
 	return defaultRedsync.NewMutex(name, options...)
 }
@@ -84,7 +85,7 @@ func SetDriftFactor(factor float64) Option {
 	})
 }
 
-// Set token
+// SetToken set the mutex token
 func SetToken(token string) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.token = token

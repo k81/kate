@@ -8,12 +8,14 @@ import (
 	"github.com/k81/log"
 )
 
+// Recovery implements the recovery wrapper middleware
 func Recovery(h ContextHandler) ContextHandler {
 	f := func(ctx context.Context, w ResponseWriter, r *Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+				// nolint:errcheck
+				w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 				log.Error(ctx, "got panic", "error", err, "stack", utils.GetPanicStack())
 			}
 		}()

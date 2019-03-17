@@ -7,7 +7,7 @@ import (
 )
 
 type HelloHandler struct {
-	kate.BaseHandler
+	BaseHandler
 }
 
 func (h *HelloHandler) ServeHTTP(ctx context.Context, w kate.ResponseWriter, r *kate.Request) {

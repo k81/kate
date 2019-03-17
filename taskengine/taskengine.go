@@ -10,25 +10,23 @@ import (
 	"github.com/k81/log"
 )
 
+// TaskEngine define the task engine
 type TaskEngine struct {
-	sync.WaitGroup
 	name              string
-	shutdown          bool
 	concurrencyTokens chan struct{}
-	logger            *log.Logger
 	ctx               context.Context
 	cancel            context.CancelFunc
+	shutdown          bool
+	sync.WaitGroup
 }
 
+// New create a new task engine
 func New(ctx context.Context, name string, concurrencyLevel int) *TaskEngine {
-	var (
-		newctx, cancel = context.WithCancel(ctx)
-		logger         = log.With("taskengine", name)
-	)
+	newctx, cancel := context.WithCancel(ctx)
+	newctx = log.WithContext(newctx, "taskengine", name)
 
 	engine := &TaskEngine{
 		name:   name,
-		logger: logger,
 		ctx:    newctx,
 		cancel: cancel,
 	}
@@ -39,9 +37,10 @@ func New(ctx context.Context, name string, concurrencyLevel int) *TaskEngine {
 	return engine
 }
 
+// Schedule schedule a task running on engine
 func (engine *TaskEngine) Schedule(task Task) bool {
 	if engine.shutdown {
-		engine.logger.Error(engine.ctx, "already stopped, should not schedule new task")
+		log.Error(engine.ctx, "already stopped, should not schedule new task")
 		return false
 	}
 
@@ -58,7 +57,7 @@ func (engine *TaskEngine) Schedule(task Task) bool {
 func (engine *TaskEngine) run(task Task) {
 	defer func() {
 		if r := recover(); r != nil {
-			engine.logger.Error(engine.ctx, "task panic:", "error", r, "stack", utils.GetPanicStack())
+			log.Error(engine.ctx, "task panic:", "error", r, "stack", utils.GetPanicStack())
 		}
 		if engine.concurrencyTokens != nil {
 			<-engine.concurrencyTokens
@@ -69,12 +68,13 @@ func (engine *TaskEngine) run(task Task) {
 	task.Run()
 }
 
+// Shutdown stop the task engine
 func (engine *TaskEngine) Shutdown() {
 	if engine.shutdown {
 		panic(fmt.Sprintf("task engine %s shutdown twice", engine.name))
 	}
 
-	engine.logger.Info(engine.ctx, "stopping")
+	log.Info(engine.ctx, "stopping")
 
 	engine.shutdown = true
 	engine.cancel()
@@ -83,5 +83,5 @@ func (engine *TaskEngine) Shutdown() {
 	if engine.concurrencyTokens != nil {
 		close(engine.concurrencyTokens)
 	}
-	engine.logger.Info(engine.ctx, "stopped")
+	log.Info(engine.ctx, "stopped")
 }

@@ -13,11 +13,12 @@ import (
 )
 
 const (
+	// RingSize define the ring buffer size for timer engine
 	RingSize = 3600
 )
 
 var (
-	mctx = context.Background()
+	mctx = log.WithContext(context.Background(), "module", "timerengine")
 )
 
 type request struct {
@@ -26,6 +27,8 @@ type request struct {
 	result   chan *TimerTask
 }
 
+// TimerEngine define the timer engine
+// nolint:maligned
 type TimerEngine struct {
 	name      string
 	buckets   []*list.List
@@ -33,13 +36,13 @@ type TimerEngine struct {
 	ticker    <-chan time.Time
 	tickIndex uint32
 	executors *taskengine.TaskEngine
-	taskIdSeq uint64
-	logger    *log.Logger
+	taskIDSeq uint64
 	ctx       context.Context
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
 }
 
+// New create a new TimerEngine
 func New(name string, concurrencyLevel int) *TimerEngine {
 	var (
 		newctx, cancel = context.WithCancel(mctx)
@@ -51,8 +54,7 @@ func New(name string, concurrencyLevel int) *TimerEngine {
 		buckets:   make([]*list.List, RingSize),
 		requests:  make(chan *request, 1024),
 		executors: taskengine.New(newctx, name, concurrencyLevel),
-		logger:    log.With("name", name),
-		ctx:       newctx,
+		ctx:       log.WithContext(newctx, "name", name),
 		cancel:    cancel,
 	}
 
@@ -63,32 +65,35 @@ func New(name string, concurrencyLevel int) *TimerEngine {
 	return e
 }
 
+// Name return the name of timer engine
 func (e *TimerEngine) Name() string {
 	return e.name
 }
 
+// Start start the timer engine
 func (e *TimerEngine) Start() {
 	e.wg.Add(1)
 	go e.loop()
 }
 
+// Stop stop the timer engine
 func (e *TimerEngine) Stop() {
 	e.cancel()
 	e.wg.Wait()
 }
 
 func (e *TimerEngine) loop() {
-	e.logger.Info(e.ctx, "timer engine loop started")
+	log.Info(e.ctx, "timer engine loop started")
 
 	defer func() {
 		if r := recover(); r != nil {
-			e.logger.Fatal(e.ctx, "panic", "error", r, "stack", utils.GetPanicStack())
+			log.Fatal(e.ctx, "panic", "error", r, "stack", utils.GetPanicStack())
 		}
 
 		e.cancel()
 		e.executors.Shutdown()
 		e.wg.Done()
-		e.logger.Info(e.ctx, "main loop stopped")
+		log.Info(e.ctx, "main loop stopped")
 	}()
 
 	for {
@@ -109,9 +114,9 @@ func (e *TimerEngine) loop() {
 
 				req.result <- task
 
-				if e.logger.Enabled(log.LevelTrace) {
-					e.logger.Trace(e.ctx, "add timer task",
-						"task_id", task.Id,
+				if log.Enabled(log.LevelTrace) {
+					log.Trace(e.ctx, "add timer task",
+						"task_id", task.ID,
 						"delay", req.delay,
 						"tick_bucket_index", tickIndex,
 						"task_bucket_index", bucketIndex,
@@ -129,23 +134,27 @@ func (e *TimerEngine) loop() {
 				go func(tasks *list.List, tickIndex uint32) {
 					var (
 						next   *list.Element
-						task   *TimerTask
 						tBegin = time.Now()
 					)
 
-					if e.logger.Enabled(log.LevelTrace) {
-						e.logger.Trace(e.ctx, "schedule for tick started", "tick_bucket_index", tickIndex, "task_count", tasks.Len())
+					if log.Enabled(log.LevelTrace) {
+						log.Trace(e.ctx, "schedule for tick started",
+							"tick_bucket_index", tickIndex,
+							"task_count", tasks.Len())
 					}
 
-					if e.logger.Enabled(log.LevelTrace) {
+					if log.Enabled(log.LevelTrace) {
 						defer func() {
-							e.logger.Trace(e.ctx, "schedule for tick stopped", "tick_bucket_index", tickIndex, "duration_ms", int64(time.Since(tBegin)/time.Millisecond))
+							log.Trace(e.ctx, "schedule for tick stopped",
+								"tick_bucket_index", tickIndex,
+								"duration_ms", int64(time.Since(tBegin)/time.Millisecond))
 						}()
 					}
 
 					for e := tasks.Front(); e != nil; e = next {
 						next = e.Next()
-						task = e.Value.(*TimerTask)
+						// nolint:errcheck
+						task := e.Value.(*TimerTask)
 
 						if task.ready() {
 							task.dispose()
@@ -158,19 +167,19 @@ func (e *TimerEngine) loop() {
 	}
 }
 
-func (e *TimerEngine) nextTaskId() uint64 {
-	return atomic.AddUint64(&e.taskIdSeq, 1)
+func (e *TimerEngine) nextTaskID() uint64 {
+	return atomic.AddUint64(&e.taskIDSeq, 1)
 }
 
 func (e *TimerEngine) updateTickIndex() uint32 {
 	tickIndex := atomic.AddUint32(&e.tickIndex, 1)
-	tickIndex = tickIndex % RingSize
+	tickIndex %= RingSize
 	return tickIndex
 }
 
 func (e *TimerEngine) getTickIndex() uint32 {
 	tickIndex := atomic.LoadUint32(&e.tickIndex)
-	tickIndex = tickIndex % RingSize
+	tickIndex %= RingSize
 	return tickIndex
 }
 
@@ -178,6 +187,7 @@ func (e *TimerEngine) execute(f TaskFunc) {
 	e.executors.Schedule(f)
 }
 
+// Schedule schedule a timer task with delay
 func (e *TimerEngine) Schedule(f TaskFunc, delay int64) (task *TimerTask) {
 	if delay <= 0 {
 		task = newTimerTask(e, 0, f)

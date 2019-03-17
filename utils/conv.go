@@ -152,6 +152,7 @@ func GetFloat64(v interface{}) float64 {
 	return f
 }
 
+// StringJoin join slice to single string
 func StringJoin(params ...interface{}) string {
 	var buffer bytes.Buffer
 
@@ -162,40 +163,43 @@ func StringJoin(params ...interface{}) string {
 	return buffer.String()
 }
 
+// GetIntSlices convert interface to []int
 func GetIntSlices(v interface{}) []int {
 
 	switch result := v.(type) {
 
 	case []int:
-		return []int(result)
+		return result
 	default:
 		return nil
 	}
 }
 
+// GetInt64Slices convert interface to []int64
 func GetInt64Slices(v interface{}) []int64 {
 
 	switch result := v.(type) {
 
 	case []int64:
-		return []int64(result)
+		return result
 	default:
 		return nil
 	}
 }
 
+// GetUint64Slices convert interface to []uint64
 func GetUint64Slices(v interface{}) []uint64 {
 
 	switch result := v.(type) {
 
 	case []uint64:
-		return []uint64(result)
+		return result
 	default:
 		return nil
 	}
 }
 
-// convert interface to byte slice.
+// GetByteArray convert interface to byte slice.
 func GetByteArray(v interface{}) []byte {
 	switch result := v.(type) {
 	case []byte:
@@ -207,6 +211,7 @@ func GetByteArray(v interface{}) []byte {
 	}
 }
 
+// StringsToInterfaces convert to []string to []interface{}
 func StringsToInterfaces(keys []string) []interface{} {
 	result := make([]interface{}, len(keys))
 	for i, k := range keys {
@@ -215,6 +220,7 @@ func StringsToInterfaces(keys []string) []interface{} {
 	return result
 }
 
+// GetByKind convert interface to kind
 func GetByKind(kind reflect.Kind, v interface{}) (result interface{}) {
 	switch kind {
 	case reflect.Bool:
@@ -246,5 +252,5 @@ func GetByKind(kind reflect.Kind, v interface{}) (result interface{}) {
 	default:
 		result = v
 	}
-	return
+	return result
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// ResponseWriter defines the response writer
 type ResponseWriter interface {
 	http.ResponseWriter
 
@@ -49,6 +50,7 @@ func (w *responseWriter) Flush() {
 	if !w.wroteHeader {
 		w.WriteHeader(http.StatusOK)
 	}
+	// nolint:errcheck
 	flusher := w.ResponseWriter.(http.Flusher)
 	flusher.Flush()
 }

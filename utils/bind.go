@@ -6,20 +6,78 @@ import (
 	"strings"
 )
 
+// FillStruct set the field value of ptr according data kv map.
+func FillStruct(ptr interface{}, data map[string]interface{}) {
+	err := Bind(ptr, "", data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+var defaultStructFieldTag = "field"
+
+// FillStructByTag set the field value of struct s according
+func FillStructByTag(ptr interface{}, tag string, input map[string]interface{}) (filled []string, err error) {
+	val := reflect.ValueOf(ptr)
+	ind := reflect.Indirect(val)
+	typ := ind.Type()
+	fullName := typ.PkgPath() + "." + typ.Name()
+
+	if val.Kind() != reflect.Ptr {
+		panic(fmt.Errorf("FillStructByTag: cannot use non-ptr struct `%s`", fullName))
+	}
+
+	if typ.Kind() != reflect.Struct {
+		panic(fmt.Errorf("FillStructByTag: only allow ptr of struct"))
+	}
+
+	filled = make([]string, 0, len(input))
+	numField := ind.NumField()
+	for i := 0; i < numField; i++ {
+		structField := typ.Field(i)
+		field := ind.Field(i)
+
+		if !field.CanSet() {
+			continue
+		}
+
+		fieldTagStr := structField.Tag.Get(defaultStructFieldTag)
+		if fieldTagStr == "" {
+			continue
+		}
+
+		match := false
+		fieldTags := strings.Split(fieldTagStr, ",")
+		for _, v := range fieldTags {
+			if tag == v {
+				match = true
+				break
+			}
+		}
+
+		if !match {
+			continue
+		}
+
+		value, ok := input[structField.Name]
+		if !ok {
+			continue
+		}
+
+		if err := bindValue(field, value); err != nil {
+			return nil, err
+		}
+		filled = append(filled, structField.Name)
+	}
+	return filled, nil
+}
+
 // BindSliceSep the separator for parsing slice field
 var BindSliceSep = ","
 
 // BindUnmarshaler the bind unmarshal interface
 type BindUnmarshaler interface {
 	UnmarshalBind(value string) error
-}
-
-// FillStruct set the field value of s according data kv map.
-func FillStruct(s interface{}, data map[string]interface{}) {
-	err := Bind(s, "", data)
-	if err != nil {
-		panic(err)
-	}
 }
 
 // Bind bind values to struct ptr
@@ -108,6 +166,18 @@ func bindSlice(field reflect.Value, value interface{}) error {
 	return nil
 }
 
+func bindValuePtr(field reflect.Value, value interface{}) error {
+	typ := field.Type().Elem()
+	newValue := reflect.New(typ)
+	err := bindValue(newValue.Elem(), value)
+	if err != nil {
+		return err
+	}
+
+	field.Set(newValue)
+	return nil
+}
+
 // nolint:gocyclo
 func bindValue(field reflect.Value, value interface{}) error {
 	ok, err := unmarshalBind(field, value)
@@ -120,6 +190,8 @@ func bindValue(field reflect.Value, value interface{}) error {
 	}
 
 	switch field.Kind() {
+	case reflect.Ptr:
+		return bindValuePtr(field, value)
 	case reflect.Bool:
 		field.SetBool(GetBool(value))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

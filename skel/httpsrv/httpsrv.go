@@ -4,38 +4,42 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/k81/kate"
+	"github.com/facebookgo/grace/gracehttp"
 	"github.com/k81/log"
+
+	"__PROJECT_DIR__/config"
 )
 
 var (
-	mctx   = context.Background()
-	logger *log.Logger
+	mctx = log.WithContext(context.Background(), "module", "httpsrv")
 )
 
-func GetServer() *http.Server {
-	logger = log.With("module", "httpsrv")
-	conf := GetHttpConfig()
-
+// ListenAndServe start the http server and wait for exit
+func ListenAndServe() {
 	// 定义中间件栈，可根据需要在下面追加
-	c := kate.NewChain(
-		kate.TraceId,
-		kate.Logging,
-		kate.Recovery,
+	c := NewChain(
+		Trace,
+		Logging,
+		Recovery,
 	)
 
 	// 注册Handler
-	router := kate.NewRESTRouter(mctx)
-	router.SetMaxBodyBytes(conf.MaxBodyBytes)
+	router := NewRESTRouter(mctx)
+	router.SetMaxBodyBytes(config.HTTP.MaxBodyBytes)
 	router.GET("/hello", c.Then(&HelloHandler{}))
 
 	// 生成一个http.Server对象
 	server := &http.Server{
-		Addr:           GetListenAddr(),
+		Addr:           config.HTTP.Addr,
 		Handler:        router,
-		ReadTimeout:    conf.ReadTimeout,
-		WriteTimeout:   conf.WriteTimeout,
-		MaxHeaderBytes: conf.MaxHeaderBytes,
+		ReadTimeout:    config.HTTP.ReadTimeout,
+		WriteTimeout:   config.HTTP.WriteTimeout,
+		MaxHeaderBytes: config.HTTP.MaxHeaderBytes,
 	}
-	return server
+
+	log.Info(mctx, "http service started", "listen_addr", config.HTTP.Addr)
+
+	if err := gracehttp.Serve(server); err != nil {
+		log.Error(mctx, "serve error", "error", err)
+	}
 }

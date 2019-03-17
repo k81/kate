@@ -10,14 +10,16 @@ var (
 	externalIP string
 )
 
+// nolint:gochecknoinits
 func init() {
 	var err error
 
 	if externalIP, err = getExternalIP(); err != nil {
-		panic(fmt.Errorf("ERROR: get external ip, reason=%v\n", err))
+		panic(fmt.Errorf("get external ip, reason=%v", err))
 	}
 }
 
+// GetExternalIP return the first available external ip address
 func GetExternalIP() string {
 	return externalIP
 }
@@ -59,9 +61,11 @@ func getExternalIP() (string, error) {
 	return "", errors.New("not connected to the network")
 }
 
+// IsErrClosing return true if err indicates socket is closing
 func IsErrClosing(err error) bool {
 	if opErr, ok := err.(*net.OpError); ok {
 		err = opErr.Err
 	}
+	// nolint:stylecheck
 	return "use of closed network connection" == err.Error()
 }

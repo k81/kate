@@ -12,7 +12,7 @@ import (
 	"github.com/k81/kate/utils"
 )
 
-// A Mutex is a distributed mutual exclusion lock.
+// Mutex is a distributed mutual exclusion lock.
 type Mutex struct {
 	name   string
 	expiry time.Duration
@@ -33,6 +33,7 @@ type Mutex struct {
 	pools []Pool
 }
 
+// GetToken return the token id for the mutex
 func (m *Mutex) GetToken() string {
 	return m.token
 }
@@ -124,13 +125,15 @@ func (m *Mutex) genToken() (string, error) {
 
 func (m *Mutex) getDelay() time.Duration {
 	var n int64
-	_ = binary.Read(rand.Reader, binary.LittleEndian, &n)
-	n = n % int64(m.delayMax-m.delayMin)
+	// nolint:errcheck
+	binary.Read(rand.Reader, binary.LittleEndian, &n)
+	n %= int64(m.delayMax - m.delayMin)
 	return time.Duration(n) + m.delayMin
 }
 
 func (m *Mutex) acquire(pool Pool, token string) bool {
 	conn := pool.GetConn()
+	// nolint:errcheck
 	defer conn.Close()
 	reply, err := redis.String(conn.Do("SET", m.name, token, "NX", "PX", int(m.expiry/time.Millisecond)))
 	return err == nil && reply == "OK"
@@ -146,6 +149,7 @@ var deleteScript = redis.NewScript(1, `
 
 func (m *Mutex) release(pool Pool, token string) bool {
 	conn := pool.GetConn()
+	// nolint:errcheck
 	defer conn.Close()
 	status, err := deleteScript.Do(conn, m.name, token)
 	return err == nil && status != 0
@@ -166,6 +170,7 @@ var touchScript = redis.NewScript(1, `
 
 func (m *Mutex) touch(pool Pool, token string, expiry int) bool {
 	conn := pool.GetConn()
+	// nolint:errcheck
 	defer conn.Close()
 	status, err := redis.Int(touchScript.Do(conn, m.name, token, expiry))
 	return err == nil && status == 1

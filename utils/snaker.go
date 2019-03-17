@@ -5,7 +5,7 @@ import (
 	"unicode"
 )
 
-// CamelToSnake converts a given string to snake case
+// ToSnake converts a given string to snake case
 func ToSnake(s string) string {
 	var result string
 	var words []string
@@ -44,12 +44,12 @@ func ToSnake(s string) string {
 	return result
 }
 
-// SnakeToCamel returns a string converted from snake case to uppercase
+// ToCamel returns a string converted from snake case to uppercase
 func ToCamel(s string) string {
 	return snakeToCamel(s, true)
 }
 
-// SnakeToCamelLower returns a string converted from snake case to lowercase
+// ToCamelLower returns a string converted from snake case to lowercase
 func ToCamelLower(s string) string {
 	return snakeToCamel(s, false)
 }
