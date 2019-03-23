@@ -16,7 +16,7 @@ func updatePIDFile(pidFile string) {
 		err    error
 	)
 
-	if _, err = os.Stat(runDir); os.IsNotExist(err) {
+	if _, err = os.Stat(runDir); err != nil && os.IsNotExist(err) {
 		if err = os.Mkdir(runDir, 0755); err != nil {
 			log.Error(mctx, "mkdir dir", "dir", runDir, "error", err)
 			return
