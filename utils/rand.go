@@ -11,7 +11,11 @@ func Rand(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const (
+	AlphaNumber = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	Number      = "0123456789"
+	Alpha       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
 
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
@@ -31,7 +35,7 @@ func init() {
 }
 
 // RandString return a random string of length n
-func RandString(n int) string {
+func RandString(n int, letterBytes string) string {
 	// nolint:errcheck
 	src := randSrcPool.Get().(rand.Source)
 	b := make([]byte, n)
