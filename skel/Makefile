@@ -12,7 +12,7 @@ OUT_DIR = $(HOME_DIR)/output
 BIN_DIR = $(OUT_DIR)/bin
 BIN  = $(BIN_DIR)/$(APP)
 
-__APP_NAME___SRC  = $(HOME_DIR)/cmd/__APP_NAME__/main.go
+__APP_NAME___SRC  = $(HOME_DIR)/app/__APP_NAME__/main.go
 
 #程序版本号
 VER_MAJOR   = 1

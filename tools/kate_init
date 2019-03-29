@@ -18,6 +18,7 @@ github.com/garyburd/redigo/internal
 github.com/garyburd/redigo/redis
 github.com/kardianos/osext
 github.com/klauspost/crc32
+github.com/spf13/cobra
 github.com/sony/gobreaker
 github.com/julienschmidt/httprouter
 github.com/huandu/goroutine
@@ -73,6 +74,6 @@ function do_inflate() {
 export -f do_inflate
 find . -type f -print |grep -v .git|xargs -n 1 -P 10 -I {} bash -c 'do_inflate "$@"' _ {}
 
-mv "${APP_HOME}/cmd/__APP_NAME__/" "${APP_HOME}/cmd/${APP_NAME}/"
+mv "${APP_HOME}/app/__APP_NAME__/" "${APP_HOME}/app/${APP_NAME}/"
 
 echo '[3] done.'

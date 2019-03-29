@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/k81/kate/configer"
 	"github.com/k81/log"
 	"gopkg.in/ini.v1"
 )
@@ -21,4 +21,31 @@ type Config interface {
 	Load(*ini.Section) error
 }
 
-var Configer configer.Configer = &iniConfiger{}
+// Load load all configs
+func Load(file string) error {
+	var (
+		iniFile *ini.File
+		err     error
+	)
+
+	if iniFile, err = ini.Load(file); err != nil {
+		return fmt.Errorf("load config: %v", err)
+	}
+
+	configs := []Config{
+		Main,
+		Log,
+		Profiling,
+		DB,
+		Redis,
+		HTTP,
+	}
+
+	for _, config := range configs {
+		section := iniFile.Section(config.SectionName())
+		if err = config.Load(section); err != nil {
+			return fmt.Errorf("load config: section=%v, error=%v", config.SectionName(), err)
+		}
+	}
+	return nil
+}
