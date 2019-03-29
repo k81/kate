@@ -19,7 +19,7 @@ import (
 func NewStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "start recon server",
+		Short: "Start server",
 		Run:   startCmdFunc,
 	}
 	return cmd

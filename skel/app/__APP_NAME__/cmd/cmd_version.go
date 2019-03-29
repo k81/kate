@@ -8,7 +8,7 @@ import (
 func NewVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "print app version",
+		Short: "Print version",
 		Run:   versionCmdFunc,
 	}
 	return cmd
