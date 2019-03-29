@@ -102,7 +102,9 @@ func Init(conf *RedisConfig) {
 
 // Uninit do the clean up for the global RedisConnectionManager instance
 func Uninit() {
-	manager.uninit()
+	if manager != nil {
+		manager.uninit()
+	}
 }
 
 // GetConn return a redis.Conn instance
