@@ -2,26 +2,23 @@ package app
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"path"
+	"strconv"
 	"syscall"
 
-	"github.com/k81/kate/configer"
 	"github.com/k81/log"
 	"github.com/kardianos/osext"
 )
 
 var (
-	name         string
-	homeDir      string
-	logFile      string
-	errFile      string
-	pidFile      string
-	confFile     string
-	logFormatter log.Formatter = log.PipeKVFormatter
+	name     string
+	homeDir  string
+	pidFile  string
+	confFile string
 
 	mctx = log.WithContext(context.Background(), "module", "app")
 )
@@ -34,45 +31,12 @@ func init() {
 	)
 
 	if bin, err = osext.Executable(); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: get executable path, reason=%v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "ERROR: get executable path, reason=%v\n", err)
 		os.Exit(1)
 	}
 	homeDir = path.Dir(path.Dir(bin))
 	name = path.Base(bin)
 	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".conf"))
-}
-
-// Setup prepare for the application startup
-func Setup(configer configer.Configer) {
-	var (
-		showVersion bool
-		err         error
-	)
-
-	flag.BoolVar(&showVersion, "version", false, "show version")
-	flag.StringVar(&confFile, "config", confFile, "config file name")
-
-	flag.Parse()
-
-	if showVersion {
-		printVersion()
-		os.Exit(0)
-	}
-
-	if err = configer.Load(confFile); err != nil {
-		log.Fatal(mctx, "load config failed", "error", err)
-	}
-
-	logFile = configer.MustGet("log.log_file", path.Join(homeDir, "log", fmt.Sprint(name, ".log")))
-	errFile = configer.MustGet("log.err_file", path.Join(homeDir, "log", fmt.Sprint(name, ".log.wf")))
-	initLogger(logFile, errFile, logFormatter)
-
-	log.SetLevelByName(configer.MustGet("log.level", "DEBUG"))
-
-	pidFile = configer.MustGet("main.pid_file", path.Join(homeDir, "run", fmt.Sprint(name, ".pid")))
-	updatePIDFile(pidFile)
-
-	logVersion()
 }
 
 // Wait wait for signal to interrupt application running
@@ -110,12 +74,6 @@ func Wait() os.Signal {
 	}
 }
 
-// Cleanup do the application clean up
-func Cleanup() {
-	// nolint:errcheck
-	os.Remove(pidFile)
-}
-
 // GetName return the application name
 func GetName() string {
 	return name
@@ -126,29 +84,9 @@ func GetHomeDir() string {
 	return homeDir
 }
 
-// GetConfigFile return the config file used
-func GetConfigFile() string {
+// GetDefaultConfigFile return the config file used
+func GetDefaultConfigFile() string {
 	return confFile
-}
-
-// GetLogFile return the log file path
-func GetLogFile() string {
-	return logFile
-}
-
-// SetLogFile set the log file to f
-func SetLogFile(f string) {
-	logFile = f
-}
-
-// GetErrFile return the error log file path
-func GetErrFile() string {
-	return errFile
-}
-
-// SetErrFile set the error log file to f
-func SetErrFile(f string) {
-	errFile = f
 }
 
 // GetPidFile return the pid file path
@@ -156,12 +94,31 @@ func GetPidFile() string {
 	return pidFile
 }
 
-// SetPidFile set the pid file to f
-func SetPidFile(f string) {
-	pidFile = f
+// UpdatePIDFile update the pid in pidfile
+func UpdatePIDFile(fileName string) {
+	var (
+		runDir = path.Dir(fileName)
+		pid    = os.Getpid()
+		err    error
+	)
+
+	if err = os.MkdirAll(runDir, 0755); err != nil {
+		log.Error(mctx, "create run dir", "dir", runDir, "error", err)
+		return
+	}
+
+	if err = ioutil.WriteFile(fileName, []byte(strconv.Itoa(pid)), 0666); err != nil {
+		log.Error(mctx, "write pid to file", "pid", pid, "file", fileName, "error", err)
+		return
+	}
+	pidFile = fileName
+	log.Info(mctx, "pid file written", "file", fileName, "pid", pid)
 }
 
-// SetLogFormatter set the logging formatter to f
-func SetLogFormatter(f log.Formatter) {
-	logFormatter = f
+// RemovePIDFile do the application clean up
+func RemovePIDFile() {
+	if pidFile != "" {
+		// nolint:errcheck
+		_ = os.Remove(pidFile)
+	}
 }

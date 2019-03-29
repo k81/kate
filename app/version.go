@@ -23,7 +23,7 @@ var (
 	LastDate string
 )
 
-func printVersion() {
+func PrintVersion() {
 	fmt.Println("Version:    ", fmt.Sprintf("%s.%s.%s", VersionMajor, VersionMinor, VersionPatch))
 	fmt.Println("Revision:   ", Revision)
 	fmt.Println("Last Author:", LastAuthor)
@@ -31,7 +31,7 @@ func printVersion() {
 	fmt.Println("Build Date: ", BuildDate)
 }
 
-func logVersion() {
+func LogVersion() {
 	log.Info(mctx, "app info",
 		"version", fmt.Sprintf("%s.%s.%s", VersionMajor, VersionMinor, VersionPatch),
 		"revision", Revision,
