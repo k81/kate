@@ -29,7 +29,7 @@ func SetDefaults(ptr interface{}) error {
 			continue
 		}
 
-		if !IsZeroValue(field) {
+		if !IsEmptyValue(field) {
 			continue
 		}
 
