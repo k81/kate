@@ -32,9 +32,6 @@ func main() {
 		cmd.NewStartCmd(),
 	)
 
-	rootCmd.SetUsageFunc(cmd.UsageFunc)
-	rootCmd.SetHelpTemplate(`{{.UsageString}}`)
-
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%v", err)
 	}
