@@ -167,6 +167,12 @@ func bindSlice(field reflect.Value, value interface{}) error {
 }
 
 func bindValuePtr(field reflect.Value, value interface{}) error {
+	vv := reflect.ValueOf(value)
+	if vv.Kind() == reflect.Ptr {
+		field.Set(vv)
+		return nil
+	}
+
 	typ := field.Type().Elem()
 	newValue := reflect.New(typ)
 	err := bindValue(newValue.Elem(), value)
