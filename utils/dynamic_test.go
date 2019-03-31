@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,7 +47,7 @@ func (r *dynamicReq) NewDynamicField(fieldName string) interface{} {
 func TestParseJSON(t *testing.T) {
 	ptrA := &dynamicReq{}
 	inputA := []byte(`{"type":"A", "content":{"name":"zhangsan", "value": 11}}`)
-	errA := ParseJSON(bytes.NewBuffer(inputA), ptrA)
+	errA := ParseJSON(inputA, ptrA)
 	require.NoError(t, errA, "parse inputA")
 	require.Equal(t, "A", ptrA.Type)
 	require.IsType(t, new(aContent), ptrA.Content)
@@ -57,7 +56,7 @@ func TestParseJSON(t *testing.T) {
 
 	ptrB1 := &dynamicReq{}
 	inputB1 := []byte(`{"type":"B", "content":{"sub_type":1, "value":[1,3,5]}}`)
-	errB1 := ParseJSON(bytes.NewBuffer(inputB1), ptrB1)
+	errB1 := ParseJSON(inputB1, ptrB1)
 	require.NoError(t, errB1, "parse inputB1")
 	require.Equal(t, "B", ptrB1.Type)
 	require.IsType(t, new(bContent), ptrB1.Content)
@@ -65,7 +64,7 @@ func TestParseJSON(t *testing.T) {
 
 	ptrB2 := &dynamicReq{}
 	inputB2 := []byte(`{"type":"B", "content":{"sub_type":2, "value":13}}`)
-	errB2 := ParseJSON(bytes.NewBuffer(inputB2), ptrB2)
+	errB2 := ParseJSON(inputB2, ptrB2)
 	require.NoError(t, errB2, "parse inputB2")
 	require.Equal(t, "B", ptrB2.Type)
 	require.IsType(t, new(bContent), ptrB2.Content)
