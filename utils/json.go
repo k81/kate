@@ -18,12 +18,6 @@ func ToJSON(v interface{}) string {
 	return string(data)
 }
 
-// DynamicFielder is the dynamic fielder interface
-// Struct which implement this interface will have dynamic field support
-type DynamicFielder interface {
-	NewDynamicField(fieldName string) interface{}
-}
-
 // ParseJSON parse json with dynamic field parse support
 func ParseJSON(data []byte, ptr interface{}) error {
 	return dynamicjson.Parse(data, ptr)
