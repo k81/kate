@@ -1,7 +1,6 @@
 package httpsrv
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -112,7 +111,7 @@ func (h *BaseHandler) parseBody(ptr interface{}, req *kate.Request) (err error) 
 	ctype := req.Header.Get(HeaderContentType)
 	switch {
 	case strings.HasPrefix(ctype, MIMEApplicationJSON):
-		if err = utils.ParseJSON(bytes.NewReader(req.RawBody), ptr); err != nil {
+		if err = utils.ParseJSON(req.RawBody, ptr); err != nil {
 			if ute, ok := err.(*json.UnmarshalTypeError); ok {
 				return fmt.Errorf("unmarshal type error: expected=%v, got=%v, offset=%v",
 					ute.Type, ute.Value, ute.Offset)
