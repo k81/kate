@@ -15,7 +15,7 @@ import (
 var (
 	rootCmd = &cobra.Command{
 		Use:        app.GetName(),
-		Short:      "Unified Reconciliation System",
+		Short:      "Sample Application",
 		SuggestFor: []string{app.GetName()},
 	}
 
