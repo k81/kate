@@ -12,18 +12,18 @@ case $APP_ENV in
         ;;
 esac
 echo "environment = $APP_ENV"
-PROJECT_HOME=$(cd $(dirname $0) && cd .. && pwd -P)
-PKG_HOME="$PROJECT_HOME/output"
+
 #程序名称
 APP=__APP_NAME__
-
-GO=$GOROOT/bin/go
-
-$GO version
+PROJECT_HOME=$(cd $(dirname $0) && cd .. && pwd -P)
+PKG_HOME="$PROJECT_HOME/output"
 
 cd $PROJECT_HOME
 
 function doBuild() {
+    GO=$GOROOT/bin/go
+    $GO version
+
     pwd
     echo -ne "-> building $1 \t ... "
     make #>/dev/null
@@ -41,4 +41,3 @@ cp scripts/conf/$APP_ENV.conf $PKG_HOME/conf/$APP.conf
 echo 'building started'
 doBuild
 echo 'building finished'
-
