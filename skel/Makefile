@@ -52,6 +52,9 @@ LDFLAGS += -X $(KATE_APP_PKG).LastDate=$(LAST_DATE)
 LDFLAGS += -X $(KATE_APP_PKG).BuildDate=$(BUILD_DATE)
 
 all: 
+	@echo "make: PWD=$(shell pwd)"
+	@echo "make: GOROOT=$(GOROOT)"
+	@echo "make: GOPATH=$(GOPATH)"
 	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN) $(__APP_NAME___SRC)
 
 lint:
