@@ -9,6 +9,7 @@ import (
 	// register the pprof handler
 	_ "net/http/pprof"
 
+	"github.com/k81/kate/utils"
 	"github.com/k81/log"
 )
 
@@ -23,8 +24,11 @@ func Start(port int) {
 }
 
 func loop(port int) {
-	var err error
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatal(mctx, "got panic", "error", r, "stack", utils.GetPanicStack())
+		}
+	}()
 	// delay to avoid listen addr conflict with parent process
 	time.Sleep(5 * time.Second)
 
@@ -32,7 +36,7 @@ func loop(port int) {
 
 	log.Info(mctx, "starting", "addr", addr)
 
-	if err = http.ListenAndServe(addr, nil); err != nil {
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Error(mctx, "serve http profiling", "addr", addr, "error", err)
 	}
 }
