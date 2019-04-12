@@ -27,3 +27,21 @@ func CountLine(fileName string) (int, error) {
 		}
 	}
 }
+
+func TouchFile(fileName string) error {
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
+func IsFileExists(fileName string) (exists bool, err error) {
+	if _, err = os.Stat(fileName); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
