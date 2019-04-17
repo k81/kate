@@ -1,9 +1,10 @@
-package queryparams
+package queryparams_test
 
 import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/k81/kate/queryparams"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,8 +45,8 @@ func TestNewQueryParams(t *testing.T) {
 		"CreateTime__lt":  createTimeEnd,
 	}
 
-	p := NewQueryParamsFromTag(req)
+	p := queryparams.NewQueryParamsFromTag(req)
 	require.NotNil(t, p)
-	require.Equal(t, expectedFilters, p.filters)
+	require.Equal(t, expectedFilters, p.GetFilters())
 	spew.Dump(p)
 }
