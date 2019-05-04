@@ -17,9 +17,9 @@ var (
 
 // Init initialize the model setting.
 func Init() {
-	conf := config.MySQL
+	conf := config.DB
 
-	orm.Debug = conf.DebugSQL
+	orm.Debug = true
 	orm.SetLogger(log.Tag("__debug_sql"))
 	orm.RegisterDB("default", "mysql", conf.DataSource, conf.MaxIdleConns, conf.MaxOpenConns, conf.ConnMaxLifetime)
 }
