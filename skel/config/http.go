@@ -27,7 +27,7 @@ func (conf *HTTPConfig) SectionName() string {
 func (conf *HTTPConfig) Load(section *ini.Section) error {
 	conf.Addr = section.Key("addr").MustString(":8080")
 	conf.ReadTimeout = section.Key("read_timeout").MustDuration(2000 * time.Millisecond)
-	conf.WriteTimeout = section.Key("write_timeout").MustDuration(2000 * time.Millisecond)
+	conf.WriteTimeout = section.Key("write_timeout").MustDuration(0)
 	conf.MaxHeaderBytes = section.Key("max_header_bytes").MustInt(1048576)
 	conf.MaxBodyBytes = section.Key("max_body_bytes").MustInt64(1073741824)
 	return nil
