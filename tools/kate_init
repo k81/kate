@@ -23,7 +23,6 @@ github.com/sony/gobreaker
 github.com/julienschmidt/httprouter
 github.com/huandu/goroutine
 github.com/k81/govalidator
-github.com/k81/service
 github.com/k81/httpclient
 github.com/k81/orm
 github.com/k81/log
