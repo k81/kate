@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/facebookgo/grace/gracehttp"
 	"github.com/k81/kate"
 	"github.com/k81/log"
 
@@ -39,7 +38,7 @@ func ListenAndServe() {
 
 	log.Info(mctx, "http service started", "listen_addr", config.HTTP.Addr)
 
-	if err := gracehttp.Serve(server); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Error(mctx, "serve error", "error", err)
 	}
 }
