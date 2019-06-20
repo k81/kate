@@ -1,10 +1,20 @@
 package utils
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Milliseconds return the milliseconds of time
 func Milliseconds(t time.Time) int64 {
 	return t.UnixNano() / int64(time.Millisecond)
+}
+
+// TimeInUTCOffset return time in specified utc offset
+func TimeInUTCOffset(t time.Time, utcOffset int) time.Time {
+	zoneName := fmt.Sprintf("UTC%+d", utcOffset)
+	loc := time.FixedZone(zoneName, utcOffset*60*60)
+	return t.In(loc)
 }
 
 // GetDayRangeOfMonth [firstDay, lastDay]
