@@ -36,3 +36,18 @@ func GetTimeRangeOfDay(t time.Time) (begin, end time.Time) {
 	end = begin.AddDate(0, 0, 1)
 	return begin, end
 }
+
+// GetMonthsOfDayRange return the month string of day range [beginDay, endDay]
+func GetMonthsOfDayRange(layout string, beginDay, endDay time.Time) []string {
+	monthMap := make(map[string]bool)
+	for curDay := beginDay; !curDay.After(endDay); curDay = curDay.Add(24 * time.Hour) {
+		month := curDay.Format(layout)
+		monthMap[month] = true
+	}
+
+	result := make([]string, 0, len(monthMap))
+	for month := range monthMap {
+		result = append(result, month)
+	}
+	return result
+}
