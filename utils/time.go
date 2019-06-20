@@ -10,11 +10,15 @@ func Milliseconds(t time.Time) int64 {
 	return t.UnixNano() / int64(time.Millisecond)
 }
 
+// TimeLocationOfUTCOffset return the time.Location of utc offset
+func TimeLocationOfUTCOffset(utcOffset int) *time.Location {
+	zoneName := fmt.Sprintf("UTC%+d", utcOffset)
+	return time.FixedZone(zoneName, utcOffset*60*60)
+}
+
 // TimeInUTCOffset return time in specified utc offset
 func TimeInUTCOffset(t time.Time, utcOffset int) time.Time {
-	zoneName := fmt.Sprintf("UTC%+d", utcOffset)
-	loc := time.FixedZone(zoneName, utcOffset*60*60)
-	return t.In(loc)
+	return t.In(TimeLocationOfUTCOffset(utcOffset))
 }
 
 // GetDayRangeOfMonth [firstDay, lastDay]
