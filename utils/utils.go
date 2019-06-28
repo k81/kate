@@ -17,19 +17,25 @@ func Abs(v int64) int64 {
 }
 
 // Min return the minimum value
-func Min(a, b int) int {
-	if a < b {
-		return a
+func Min(vals ...int) int {
+	min := vals[0]
+	for _, val := range vals[1:] {
+		if val < min {
+			min = val
+		}
 	}
-	return b
+	return min
 }
 
 // Max return the maximum value
-func Max(a, b int) int {
-	if a > b {
-		return a
+func Max(vals ...int) int {
+	max := vals[0]
+	for _, val := range vals[1:] {
+		if val > max {
+			max = val
+		}
 	}
-	return b
+	return max
 }
 
 // Split split the string.
