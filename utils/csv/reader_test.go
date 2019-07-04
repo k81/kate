@@ -9,7 +9,7 @@ import (
 
 func TestCSVReader(t *testing.T) {
 	csvFileName := "./tests/data.csv"
-	csvReader, err := NewCSVReader(csvFileName, 1)
+	csvReader, err := NewReader(csvFileName, 1)
 	if err != nil {
 		defer csvReader.Close()
 	}

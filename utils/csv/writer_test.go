@@ -10,7 +10,7 @@ import (
 
 func TestCSVWriter(t *testing.T) {
 	csvFileName := "./tests/writer.csv"
-	csvWriter, err := NewCSVWriter(csvFileName)
+	csvWriter, err := NewWriter(csvFileName)
 	if err == nil {
 		defer func() {
 			_ = csvWriter.Close()
