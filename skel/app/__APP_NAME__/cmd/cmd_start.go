@@ -8,7 +8,7 @@ import (
 	"path"
 
 	"github.com/k81/kate/app"
-	"github.com/k81/kate/logger"
+	"github.com/k81/kate/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
@@ -33,7 +33,7 @@ func initLog() *zap.Logger {
 		os.Exit(1)
 	}
 
-	cfg := &logger.Config{}
+	cfg := &log.Config{}
 	if err = json.Unmarshal(data, cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to unmarshal logger config: %v\n", err)
 		os.Exit(1)
