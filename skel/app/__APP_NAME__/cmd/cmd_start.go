@@ -70,5 +70,5 @@ func startCmdFunc(cmd *cobra.Command, args []string) {
 	}
 
 	logger.Info(fmt.Sprintf("%s started", app.GetName()))
-	httpsrv.ListenAndServe()
+	httpsrv.ListenAndServe(logger)
 }

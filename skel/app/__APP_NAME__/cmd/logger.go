@@ -32,7 +32,7 @@ type LoggerConfig struct {
 	// development and ErrorLevel and above in production.
 	DisableStacktrace bool `json:"disableStacktrace" yaml:"disableStacktrace"`
 	// Sampling sets a sampling policy. A nil SamplingConfig disables sampling.
-	Sampling *SamplingConfig `json:"sampling" yaml:"sampling"`
+	Sampling *zap.SamplingConfig `json:"sampling" yaml:"sampling"`
 	// Encoding sets the logger's encoding. Valid values are "json" and
 	// "console", as well as any third-party encodings registered via
 	// RegisterEncoder.
