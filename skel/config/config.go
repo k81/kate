@@ -28,7 +28,6 @@ func Load(file string) error {
 
 	configs := []Config{
 		Main,
-		Log,
 		Profiling,
 		DB,
 		Redis,
