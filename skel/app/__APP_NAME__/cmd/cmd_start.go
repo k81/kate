@@ -77,5 +77,5 @@ func startCmdFunc(cmd *cobra.Command, args []string) {
 
 	// TODO: server start here
 
-	logger.Info("server started", zap.String("k1", "v1"), zap.Any("k2", config.Profiling))
+	logger.Info("server started")
 }

@@ -8,7 +8,7 @@ APP  = __APP_NAME__
 
 GO	 = $(GOROOT)/bin/go
 LINT = golangci-lint
-OUT_DIR = $(HOME_DIR)/output
+OUT_DIR = $(HOME_DIR)/outputs
 BIN_DIR = $(OUT_DIR)/bin
 BIN  = $(BIN_DIR)/$(APP)
 
