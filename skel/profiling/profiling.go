@@ -1,7 +1,6 @@
 package profiling
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,24 +8,22 @@ import (
 	// register the pprof handler
 	_ "net/http/pprof"
 
-	"github.com/k81/kate/utils"
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
-var (
-	mctx = log.WithContext(context.Background(), "module", "profiling")
-	addr string
-)
+var addr string
+var logger *zap.Logger
 
 // Start start the http pprof server
-func Start(port int) {
+func Start(port int, l *zap.Logger) {
+	logger = l
 	go loop(port)
 }
 
 func loop(port int) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatal(mctx, "got panic", "error", r, "stack", utils.GetPanicStack())
+			logger.Fatal("got panic", zap.Any("error", r), zap.Stack("stack"))
 		}
 	}()
 	// delay to avoid listen addr conflict with parent process
@@ -34,9 +31,9 @@ func loop(port int) {
 
 	addr = fmt.Sprint("0.0.0.0:", port)
 
-	log.Info(mctx, "starting", "addr", addr)
+	logger.Info("starting", zap.String("addr", addr))
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Error(mctx, "serve http profiling", "addr", addr, "error", err)
+		logger.Error("serve http profiling", zap.String("addr", addr), zap.Error(err))
 	}
 }

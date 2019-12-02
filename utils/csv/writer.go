@@ -6,16 +6,17 @@ import (
 	"os"
 	"path"
 
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 type Writer struct {
 	FileName string
 	file     *os.File
 	writer   *csv.Writer
+	logger   *zap.Logger
 }
 
-func NewWriter(fileName string) (writer *Writer, err error) {
+func NewWriter(fileName string, logger *zap.Logger) (writer *Writer, err error) {
 	if err = os.MkdirAll(path.Dir(fileName), 0755); err != nil {
 		return nil, err
 	}
@@ -29,6 +30,7 @@ func NewWriter(fileName string) (writer *Writer, err error) {
 		FileName: fileName,
 		file:     file,
 		writer:   csv.NewWriter(file),
+		logger:   logger,
 	}
 	return writer, nil
 }
@@ -44,7 +46,7 @@ func (writer *Writer) WriteAll(ctx context.Context, records [][]string) (err err
 func (writer *Writer) Close() error {
 	writer.writer.Flush()
 	if err := writer.writer.Error(); err != nil {
-		log.Error(context.TODO(), "flushing csv writer", "file", writer.FileName, "error", err)
+		writer.logger.Error("flushing csv writer", zap.String("file", writer.FileName), zap.Error(err))
 	}
 	return writer.file.Close()
 }

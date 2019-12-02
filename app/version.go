@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 var (
@@ -31,12 +31,12 @@ func PrintVersion() {
 	fmt.Println("Build Date: ", BuildDate)
 }
 
-func LogVersion() {
-	log.Info(mctx, "app info",
-		"version", fmt.Sprintf("%s.%s.%s", VersionMajor, VersionMinor, VersionPatch),
-		"revision", Revision,
-		"last_author", LastAuthor,
-		"last_date", LastDate,
-		"build_date", BuildDate,
+func LogVersion(logger *zap.Logger) {
+	logger.Info("app info",
+		zap.String("version", fmt.Sprintf("%s.%s.%s", VersionMajor, VersionMinor, VersionPatch)),
+		zap.String("revision", Revision),
+		zap.String("last_author", LastAuthor),
+		zap.String("last_date", LastDate),
+		zap.String("build_date", BuildDate),
 	)
 }

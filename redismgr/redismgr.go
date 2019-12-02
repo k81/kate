@@ -6,21 +6,17 @@ package redismgr
 // Stateless make configuration update at runtime easy.
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/k81/log"
-	"github.com/k81/retry"
 	"github.com/sony/gobreaker"
+	"go.uber.org/zap"
 )
 
-var (
-	mctx    = log.WithContext(context.Background(), "module", "redismgr")
-	manager *RedisConnectionManager
-)
+var manager *RedisConnectionManager
+var logger *zap.Logger
 
 // RedisConfig defines the redis config
 type RedisConfig struct {
@@ -53,7 +49,7 @@ func getDialFunc(addr string, connectTimeout, readTimeout, writeTimeout time.Dur
 	return func() (redis.Conn, error) {
 		c, err := redis.DialTimeout("tcp", addr, connectTimeout, readTimeout, writeTimeout)
 		if err != nil {
-			log.Error(mctx, "dail to server", "redis_server", addr, "error", err)
+			logger.Error("dail to server", zap.String("redis_server", addr), zap.Error(err))
 		}
 		return c, err
 	}
@@ -68,7 +64,7 @@ func newRedisConnMgr(conf *RedisConfig) *RedisConnectionManager {
 	}
 
 	for idx, addr := range conf.Addrs {
-		log.Info(mctx, "creating redis pool", "redis_server", addr)
+		logger.Info("creating redis pool", zap.String("redis_server", addr))
 
 		mgr.breakers[idx] = gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:        fmt.Sprint("circuit breaker redis-", addr),
@@ -79,7 +75,11 @@ func newRedisConnMgr(conf *RedisConfig) *RedisConnectionManager {
 				return counts.TotalFailures >= uint32(20)
 			},
 			OnStateChange: func(name string, from, to gobreaker.State) {
-				log.Info(mctx, "circuit breaker state changed", "name", name, "from", from, "to", to)
+				logger.Info("circuit breaker state changed",
+					zap.String("name", name),
+					zap.Any("from", from),
+					zap.Any("to", to),
+				)
 			},
 		})
 
@@ -96,8 +96,9 @@ func newRedisConnMgr(conf *RedisConfig) *RedisConnectionManager {
 }
 
 // Init initialize the global RedisConnectionManager instance
-func Init(conf *RedisConfig) {
+func Init(conf *RedisConfig, l *zap.Logger) {
 	manager = newRedisConnMgr(conf)
+	logger = l
 }
 
 // Uninit do the clean up for the global RedisConnectionManager instance
@@ -119,74 +120,43 @@ func getConnWithCircuitBreaker() (redis.Conn, *gobreaker.CircuitBreaker) {
 	return manager.pools[idx].Get(), manager.breakers[idx]
 }
 
-// TryRedisCmd retry a redis command with respect of the circuit breaker status
-func TryRedisCmd(ctx context.Context, strategy retry.ResettableStrategy, cmd string, args ...interface{}) (reply interface{}, err error) {
-	if strategy == nil {
-		strategy = defaultRetryStrategy()
-	}
+// Do a redis command with respect of the circuit breaker status
+func Do(cmd string, args ...interface{}) (reply interface{}, err error) {
+	c, breaker := getConnWithCircuitBreaker()
+	defer func() {
+		// nolint:errcheck
+		c.Close()
+	}()
 
-	retry.DoWithReset(ctx, strategy, func() bool {
-		c, breaker := getConnWithCircuitBreaker()
-		defer func() {
-			// nolint:errcheck
-			c.Close()
-		}()
-
-		if reply, err = breaker.Execute(func() (interface{}, error) { return c.Do(cmd, args...) }); err != nil {
-			argstr := fmt.Sprintln(args...)
-			if len(argstr) > 0 {
-				argstr = argstr[0 : len(argstr)-1]
-			}
-			log.Error(ctx, "failed to try redis cmd, retrying with another connection",
-				"cmd", cmd,
-				"args", argstr,
-				"error", err,
-			)
-			return false
+	if reply, err = breaker.Execute(func() (interface{}, error) { return c.Do(cmd, args...) }); err != nil {
+		argstr := fmt.Sprintln(args...)
+		if len(argstr) > 0 {
+			argstr = argstr[0 : len(argstr)-1]
 		}
-		return true
-	})
-	return
+		logger.Error("failed to try redis cmd, retrying with another connection",
+			zap.String("cmd", cmd),
+			zap.String("args", argstr),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+	return reply, nil
 }
 
-// TryRedisScript run a lua script with the respect of the circuit breaker status
-func TryRedisScript(ctx context.Context, strategy retry.ResettableStrategy, script *redis.Script, keysAndArgs ...interface{}) (reply interface{}, err error) {
-	if strategy == nil {
-		strategy = defaultRetryStrategy()
+// DoScript run a lua script with the respect of the circuit breaker status
+func DoScript(script *redis.Script, keysAndArgs ...interface{}) (reply interface{}, err error) {
+	c, breaker := getConnWithCircuitBreaker()
+	defer func() {
+		// nolint:errcheck
+		c.Close()
+	}()
+
+	if reply, err = breaker.Execute(func() (interface{}, error) { return script.Do(c, keysAndArgs...) }); err != nil {
+		logger.Error("failed to try redis script, retrying with another connection",
+			zap.String("script", script.Hash()),
+			zap.Error(err),
+		)
+		return nil, err
 	}
-
-	retry.DoWithReset(ctx, strategy, func() bool {
-		c, breaker := getConnWithCircuitBreaker()
-		defer func() {
-			// nolint:errcheck
-			c.Close()
-		}()
-
-		if reply, err = breaker.Execute(func() (interface{}, error) { return script.Do(c, keysAndArgs...) }); err != nil {
-			log.Error(ctx, "failed to try redis script, retrying with another connection",
-				"script", script,
-				"error", err,
-			)
-			return false
-		}
-		return true
-	})
-	return
-}
-
-// defaultRetryStrategy return the default retry strategy
-func defaultRetryStrategy() retry.ResettableStrategy {
-	s := &retry.AllResettable{
-		&retry.MaximumTimeStrategy{
-			Duration: time.Second,
-		},
-		&retry.ExponentialBackoffStrategy{
-			InitialDelay: time.Millisecond * 30,
-			MaxDelay:     time.Millisecond * 500,
-		},
-		&retry.CountStrategy{
-			Tries: 2,
-		},
-	}
-	return s
+	return reply, nil
 }

@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
 	"github.com/k81/kate/app"
-	"github.com/k81/log"
 	"github.com/spf13/cobra"
 
 	"__PROJECT_DIR__/app/__APP_NAME__/cmd"
@@ -18,8 +16,6 @@ var (
 		Short:      "Sample Application",
 		SuggestFor: []string{app.GetName()},
 	}
-
-	mctx = log.WithContext(context.Background(), "module", "main")
 )
 
 func main() {

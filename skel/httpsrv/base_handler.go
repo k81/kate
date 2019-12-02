@@ -10,7 +10,7 @@ import (
 	"github.com/k81/govalidator"
 	"github.com/k81/kate"
 	"github.com/k81/kate/utils"
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 const (
@@ -36,7 +36,7 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 	// decode json
 	if r.ContentLength != 0 {
 		if err := h.parseBody(req, r); err != nil {
-			log.Error(ctx, "decode request", "error", err)
+			logger.Error("decode request", zap.Error(err))
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 		}
 
 		if err := utils.Bind(req, "query", data); err != nil {
-			log.Error(ctx, "bind query var failed", "error", err)
+			logger.Error("bind query var failed", zap.Error(err))
 			return err
 		}
 	}
@@ -63,19 +63,19 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 		}
 
 		if err := utils.Bind(req, "rest", data); err != nil {
-			log.Error(ctx, "bind rest var failed", "error", err)
+			logger.Error("bind rest var failed", zap.Error(err))
 			return err
 		}
 	}
 
 	// set defaults
 	if err := utils.SetDefaults(req); err != nil {
-		log.Error(ctx, "set default failed", "error", err)
+		logger.Error("set default failed", zap.Error(err))
 		return ErrServerInternal
 	}
 	// validate
 	if err := govalidator.ValidateStruct(req); err != nil {
-		log.Error(ctx, "validate request", "error", err)
+		logger.Error("validate request", zap.Error(err))
 		return err
 	}
 	return nil

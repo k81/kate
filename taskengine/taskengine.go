@@ -6,8 +6,7 @@ import (
 
 	"context"
 
-	"github.com/k81/kate/utils"
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 // TaskEngine define the task engine
@@ -16,19 +15,20 @@ type TaskEngine struct {
 	concurrencyTokens chan struct{}
 	ctx               context.Context
 	cancel            context.CancelFunc
+	logger            *zap.Logger
 	shutdown          bool
 	sync.WaitGroup
 }
 
 // New create a new task engine
-func New(ctx context.Context, name string, concurrencyLevel int) *TaskEngine {
+func New(ctx context.Context, name string, concurrencyLevel int, logger *zap.Logger) *TaskEngine {
 	newctx, cancel := context.WithCancel(ctx)
-	newctx = log.WithContext(newctx, "taskengine", name)
 
 	engine := &TaskEngine{
 		name:   name,
 		ctx:    newctx,
 		cancel: cancel,
+		logger: logger.With(zap.String("taskengine", name)),
 	}
 
 	if concurrencyLevel > 0 {
@@ -40,7 +40,7 @@ func New(ctx context.Context, name string, concurrencyLevel int) *TaskEngine {
 // Schedule schedule a task running on engine
 func (engine *TaskEngine) Schedule(task Task) bool {
 	if engine.shutdown {
-		log.Error(engine.ctx, "already stopped, should not schedule new task")
+		engine.logger.Error("already stopped, should not schedule new task")
 		return false
 	}
 
@@ -57,7 +57,10 @@ func (engine *TaskEngine) Schedule(task Task) bool {
 func (engine *TaskEngine) run(task Task) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error(engine.ctx, "task panic:", "error", r, "stack", utils.GetPanicStack())
+			engine.logger.Error("task panic:",
+				zap.Any("error", r),
+				zap.Stack("stack"),
+			)
 		}
 		if engine.concurrencyTokens != nil {
 			<-engine.concurrencyTokens
@@ -74,7 +77,7 @@ func (engine *TaskEngine) Shutdown() {
 		panic(fmt.Sprintf("task engine %s shutdown twice", engine.name))
 	}
 
-	log.Info(engine.ctx, "stopping")
+	engine.logger.Info("stopping")
 
 	engine.shutdown = true
 	engine.cancel()
@@ -83,5 +86,5 @@ func (engine *TaskEngine) Shutdown() {
 	if engine.concurrencyTokens != nil {
 		close(engine.concurrencyTokens)
 	}
-	log.Info(engine.ctx, "stopped")
+	engine.logger.Info("stopped")
 }

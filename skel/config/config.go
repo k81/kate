@@ -1,15 +1,9 @@
 package config
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/k81/log"
 	"gopkg.in/ini.v1"
-)
-
-var (
-	mctx = log.WithContext(context.Background(), "module", "config")
 )
 
 // Config defines the config interface

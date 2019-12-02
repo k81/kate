@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 // Error writes out an error response
@@ -25,7 +25,7 @@ func Error(ctx context.Context, w http.ResponseWriter, err interface{}) {
 	}
 
 	if err := WriteJSON(w, result); err != nil {
-		log.Error(ctx, "write json response", "error", err)
+		logger.Error("write json response", zap.Error(err))
 	}
 }
 
@@ -43,7 +43,7 @@ func OKData(ctx context.Context, w http.ResponseWriter, data interface{}) {
 	}
 
 	if err := WriteJSON(w, result); err != nil {
-		log.Error(ctx, "write json response", "error", err)
+		logger.Error("write json response", zap.Error(err))
 	}
 }
 

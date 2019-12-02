@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 // ContextHandler defines the handler interface
@@ -24,7 +24,7 @@ func (h ContextHandlerFunc) ServeHTTP(ctx context.Context, w ResponseWriter, r *
 }
 
 // Handle adapte the ContextHandler to httprouter.Handle func
-func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httprouter.Handle {
+func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64, logger *zap.Logger) httprouter.Handle {
 	f := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		var (
 			request        *Request
@@ -67,7 +67,7 @@ func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httproute
 			w.WriteHeader(http.StatusInternalServerError)
 			// nolint:errcheck
 			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-			log.Error(ctx, "read request", "error", err)
+			logger.Error("read request", zap.Error(err))
 			return
 		}
 
@@ -77,7 +77,7 @@ func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httproute
 }
 
 // StdHandler adapte ContextHandler to http.Handler interface
-func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64) http.Handler {
+func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64, logger *zap.Logger) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		var (
 			request        *Request
@@ -119,7 +119,7 @@ func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64) http.
 			w.WriteHeader(http.StatusInternalServerError)
 			// nolint:errcheck
 			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-			log.Error(ctx, "read request", "error", err)
+			logger.Error("read request", zap.Error(err))
 			return
 		}
 

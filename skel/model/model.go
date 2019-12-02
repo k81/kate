@@ -1,25 +1,23 @@
 package model
 
 import (
-	"context"
 
 	// import mysql driver
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/k81/log"
 	"github.com/k81/orm"
+	"go.uber.org/zap"
 
 	"__PROJECT_DIR__/config"
 )
 
-var (
-	mctx = log.WithContext(context.Background(), "module", "model")
-)
+var logger *zap.Logger
 
 // Init initialize the model setting.
-func Init() {
+func Init(l *zap.Logger) {
 	conf := config.DB
 
+	logger = l
 	orm.Debug = true
-	orm.SetLogger(log.Tag("__debug_sql"))
+	orm.SetLogger(logger.With(zap.String("tag", "debug_sql")))
 	orm.RegisterDB("default", "mysql", conf.DataSource, conf.MaxIdleConns, conf.MaxOpenConns, conf.ConnMaxLifetime)
 }

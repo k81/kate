@@ -3,18 +3,18 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/k81/kate/app"
-	"github.com/k81/kate/redismgr"
-	"github.com/k81/kate/utils"
-	"github.com/k81/log"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"__PROJECT_DIR__/config"
 	"__PROJECT_DIR__/httpsrv"
-	"__PROJECT_DIR__/model"
 	"__PROJECT_DIR__/profiling"
 )
+
+var logger, _ = zap.NewDevelopment()
 
 func NewStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -25,56 +25,50 @@ func NewStartCmd() *cobra.Command {
 	return cmd
 }
 
-func startCmdFunc(cmd *cobra.Command, args []string) {
+func initLog() {
 	var (
-		logAppender *log.FileAppender
-		errAppender *log.FileAppender
-		err         error
+		cfg     = LoggerConfig{}
+		cfgPath = path.Join(app.GetHomeDir(), "conf", "logger.json")
+		err     error
 	)
 
+	if err = cfg.Load(cfgPath); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load logger config: error=%v", err)
+		os.Exit(1)
+	}
+
+	if logger, err = cfg.Build(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to build logger: error=%v", err)
+		os.Exit(1)
+	}
+}
+
+func startCmdFunc(cmd *cobra.Command, args []string) {
+	initLog()
+
 	// load config
-	if err = config.Load(GlobalFlags.ConfigFile); err != nil {
-		log.Fatal(mctx, "load config failed", "file", GlobalFlags.ConfigFile, "error", err)
-		return
+	if err := config.Load(GlobalFlags.ConfigFile); err != nil {
+		logger.Fatal("load config failed", zap.String("file", GlobalFlags.ConfigFile), zap.Error(err))
 	}
-
-	// create log file
-	if logAppender, err = log.NewFileAppender(log.LevelMask, config.Log.LogFile, log.PipeKVFormatter); err != nil {
-		os.Exit(1)
-	}
-	logAppender.DisableLock()
-
-	// create err file
-	if errAppender, err = log.NewFileAppender(log.LevelError|log.LevelFatal, config.Log.ErrFile, log.PipeKVFormatter); err != nil {
-		os.Exit(1)
-	}
-	errAppender.DisableLock()
-
-	// set logger
-	log.SetLogger(log.NewLogger(logAppender, errAppender))
 
 	// update pid
 	app.UpdatePIDFile(config.Main.PIDFile)
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatal(mctx, "panic", "error", r, "stack", utils.GetPanicStack())
+			logger.Fatal("panic", zap.Any("error", r), zap.Stack("stack"))
 		}
 
-		log.Info(mctx, "shutting down ...")
+		logger.Info("shutting down ...")
 
-		redismgr.Uninit()
 		app.RemovePIDFile()
-		log.Info(mctx, fmt.Sprintf("%s stopped", app.GetName()))
+		logger.Info(fmt.Sprintf("%s stopped", app.GetName()))
 	}()
 
 	if config.Profiling.Enabled {
-		profiling.Start(config.Profiling.Port)
+		profiling.Start(config.Profiling.Port, logger)
 	}
 
-	redismgr.Init(config.Redis.RedisConfig)
-	model.Init()
-
-	log.Info(mctx, fmt.Sprintf("%s started", app.GetName()))
+	logger.Info(fmt.Sprintf("%s started", app.GetName()))
 	httpsrv.ListenAndServe()
 }

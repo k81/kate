@@ -1,11 +1,9 @@
 package timerengine
 
 import (
-	"context"
 	"sync"
 
-	"github.com/k81/kate/utils"
-	"github.com/k81/log"
+	"go.uber.org/zap"
 )
 
 // TaskFunc define the task func type
@@ -23,7 +21,6 @@ type TimerTask struct {
 	taskFunc  TaskFunc
 	cycleNum  int
 	engine    *TimerEngine
-	ctx       context.Context
 	started   bool
 	cancelled bool
 }
@@ -36,7 +33,6 @@ func newTimerTask(engine *TimerEngine, cycleNum int, f TaskFunc) *TimerTask {
 		taskFunc: f,
 		cycleNum: cycleNum,
 		engine:   engine,
-		ctx:      log.WithContext(engine.ctx, "task_id", taskID),
 	}
 	return task
 }
@@ -80,17 +76,9 @@ func (task *TimerTask) dispose() {
 
 	if ok {
 		task.engine.execute(func() {
-			if log.Enabled(log.LevelTrace) {
-				log.Trace(task.ctx, "timer task started")
-			}
-
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error(task.ctx, "got panic", "error", r, "stack", utils.GetPanicStack())
-				}
-
-				if log.Enabled(log.LevelTrace) {
-					log.Trace(task.ctx, "timer task stopped")
+					task.engine.logger.Error("got panic", zap.Any("error", r), zap.Stack("stack"))
 				}
 			}()
 

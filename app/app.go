@@ -1,16 +1,12 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/signal"
 	"path"
 	"strconv"
-	"syscall"
 
-	"github.com/k81/log"
 	"github.com/kardianos/osext"
 )
 
@@ -19,8 +15,6 @@ var (
 	homeDir  string
 	pidFile  string
 	confFile string
-
-	mctx = log.WithContext(context.Background(), "module", "app")
 )
 
 // nolint:gochecknoinits
@@ -37,41 +31,7 @@ func init() {
 	homeDir = path.Dir(path.Dir(bin))
 	name = path.Base(bin)
 	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".conf"))
-}
-
-// Wait wait for signal to interrupt application running
-func Wait() os.Signal {
-	sigCh := make(chan os.Signal, 2)
-
-	signal.Notify(
-		sigCh,
-		syscall.SIGINT,
-		syscall.SIGQUIT,
-		syscall.SIGTERM,
-		syscall.SIGUSR2,
-		syscall.SIGHUP,
-	)
-
-	for {
-		sig := <-sigCh
-		log.Info(mctx, "got signal", "signal", sig)
-
-		switch sig {
-		case syscall.SIGINT:
-			return sig
-		case syscall.SIGQUIT:
-			{
-				log.Info(mctx, "fetch done, ready to exit")
-				return sig
-			}
-		case syscall.SIGTERM:
-			return sig
-		case syscall.SIGUSR2:
-			continue
-		case syscall.SIGHUP:
-			continue
-		}
-	}
+	os.Chdir(homeDir)
 }
 
 // GetName return the application name
@@ -95,7 +55,7 @@ func GetPidFile() string {
 }
 
 // UpdatePIDFile update the pid in pidfile
-func UpdatePIDFile(fileName string) {
+func UpdatePIDFile(fileName string) error {
 	var (
 		runDir = path.Dir(fileName)
 		pid    = os.Getpid()
@@ -103,16 +63,14 @@ func UpdatePIDFile(fileName string) {
 	)
 
 	if err = os.MkdirAll(runDir, 0755); err != nil {
-		log.Error(mctx, "create run dir", "dir", runDir, "error", err)
-		return
+		return fmt.Errorf("failed to create dir: dir=%v, error=%w", runDir, err)
 	}
 
 	if err = ioutil.WriteFile(fileName, []byte(strconv.Itoa(pid)), 0666); err != nil {
-		log.Error(mctx, "write pid to file", "pid", pid, "file", fileName, "error", err)
-		return
+		return fmt.Errorf("failed to write pid: file=%v, pid=%v, error=%v", err)
 	}
 	pidFile = fileName
-	log.Info(mctx, "pid file written", "file", fileName, "pid", pid)
+	return nil
 }
 
 // RemovePIDFile do the application clean up

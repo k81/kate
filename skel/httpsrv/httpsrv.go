@@ -5,25 +5,24 @@ import (
 	"net/http"
 
 	"github.com/k81/kate"
-	"github.com/k81/log"
+	"go.uber.org/zap"
 
 	"__PROJECT_DIR__/config"
 )
 
-var (
-	mctx = log.WithContext(context.Background(), "module", "httpsrv")
-)
+var logger *zap.Logger
 
 // ListenAndServe start the http server and wait for exit
-func ListenAndServe() {
+func ListenAndServe(l *zap.Logger) {
+	logger = l.With(zap.String("module", "httpsrv"))
 	// 定义中间件栈，可根据需要在下面追加
 	c := kate.NewChain(
-		kate.Logging,
-		kate.Recovery,
+		Logging,
+		Recovery,
 	)
 
 	// 注册Handler
-	router := kate.NewRESTRouter(mctx)
+	router := kate.NewRESTRouter(context.Background(), logger)
 	router.SetMaxBodyBytes(config.HTTP.MaxBodyBytes)
 	router.GET("/hello", c.Then(&HelloHandler{}))
 
@@ -36,9 +35,9 @@ func ListenAndServe() {
 		MaxHeaderBytes: config.HTTP.MaxHeaderBytes,
 	}
 
-	log.Info(mctx, "http service started", "listen_addr", config.HTTP.Addr)
+	logger.Info("http service started", zap.String("listen_addr", config.HTTP.Addr))
 
 	if err := server.ListenAndServe(); err != nil {
-		log.Error(mctx, "serve error", "error", err)
+		logger.Error("serve error", zap.Error(err))
 	}
 }
