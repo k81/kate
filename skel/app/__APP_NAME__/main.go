@@ -29,6 +29,6 @@ func main() {
 	)
 
 	if err := rootCmd.Execute(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
 	}
 }

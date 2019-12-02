@@ -1,84 +1,62 @@
-package cmd
+package logger
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"path"
 	"sort"
 	"time"
 
+	"github.com/k81/kate/app"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-type LogFile struct {
-	Level zapcore.Level
-	Path  string
-}
-
-type LoggerConfig struct {
+type Config struct {
 	// Level is the minimum enabled logging level. Note that this is a dynamic
-	// level, so calling Config.Level.SetLevel will atomically change the log
+	// level, so calling Config.Level.SetLevel will atomically change the logger
 	// level of all loggers descended from this config.
-	Level zap.AtomicLevel `json:"level" yaml:"level"`
+	Level zap.AtomicLevel `json:"level,omitempty" yaml:"level,omitempty"`
 	// Development puts the logger in development mode, which changes the
 	// behavior of DPanicLevel and takes stacktraces more liberally.
-	Development bool `json:"development" yaml:"development"`
+	Development bool `json:"development,omitempty" yaml:"development,omitempty"`
 	// DisableCaller stops annotating logs with the calling function's file
 	// name and line number. By default, all logs are annotated.
-	DisableCaller bool `json:"disableCaller" yaml:"disableCaller"`
+	DisableCaller bool `json:"disableCaller,omitempty" yaml:"disableCaller,omitempty"`
 	// DisableStacktrace completely disables automatic stacktrace capturing. By
 	// default, stacktraces are captured for WarnLevel and above logs in
 	// development and ErrorLevel and above in production.
-	DisableStacktrace bool `json:"disableStacktrace" yaml:"disableStacktrace"`
+	DisableStacktrace bool `json:"disableStacktrace,omitempty" yaml:"disableStacktrace,omitempty"`
 	// Sampling sets a sampling policy. A nil SamplingConfig disables sampling.
-	Sampling *zap.SamplingConfig `json:"sampling" yaml:"sampling"`
-	// Encoding sets the logger's encoding. Valid values are "json" and
-	// "console", as well as any third-party encodings registered via
-	// RegisterEncoder.
-	Encoding string `json:"encoding" yaml:"encoding"`
-	// EncoderConfig sets options for the chosen encoder. See
-	// zapcore.EncoderConfig for details.
-	EncoderConfig zapcore.EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
+	Sampling *zap.SamplingConfig `json:"sampling,omitempty" yaml:"sampling,omitempty"`
 	// OutputPaths is a list of URLs or file paths to write logging output to.
 	// See Open for details.
-	OutputPaths []LogFile `json:"outputPaths" yaml:"outputPaths"`
+	OutputPaths map[zapcore.Level]string `json:"outputPaths,omitempty" yaml:"outputPaths,omitempty"`
 	// ErrorOutputPaths is a list of URLs to write internal logger errors to.
 	// The default is standard error.
 	//
 	// Note that this setting only affects internal errors; for sample code that
 	// sends error-level logs to a different location from info- and debug-level
 	// logs, see the package-level AdvancedConfiguration example.
-	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"`
+	ErrorOutputPaths []string `json:"errorOutputPaths,omitempty" yaml:"errorOutputPaths,omitempty"`
 	// InitialFields is a collection of fields to add to the root logger.
-	InitialFields map[string]interface{} `json:"initialFields" yaml:"initialFields"`
+	InitialFields map[string]interface{} `json:"initialFields,omitempty" yaml:"initialFields,omitempty"`
 }
 
-func (cfg *LoggerConfig) Load(filePath string) (err error) {
-	var content []byte
-	if content, err = ioutil.ReadFile(filePath); err != nil {
-		return fmt.Errorf("read file: file=%v, error=%w", filePath, err)
-	}
-
-	if err = json.Unmarshal(content, cfg); err != nil {
-		return fmt.Errorf("unmarshal file: file=%v, error=%w", filePath, err)
-	}
-	return nil
-}
-
-func (cfg *LoggerConfig) Build() (*zap.Logger, error) {
+func (cfg *Config) Build() (*zap.Logger, error) {
 	cores := make([]zapcore.Core, 0, len(cfg.OutputPaths))
 	closeSinks := make([]func(), 0, len(cfg.OutputPaths))
-	for _, file := range cfg.OutputPaths {
+	for level, filePath := range cfg.OutputPaths {
 		var (
-			encoder      = zapcore.NewJSONEncoder(cfg.EncoderConfig)
-			levelEnabler = cfg.getLevelEnabler(file.Level)
+			encoder      = NewEncoder()
+			levelEnabler = cfg.getLevelEnabler(level)
 		)
 
-		sink, closeSink, err := zap.Open(file.Path)
+		if !path.IsAbs(filePath) {
+			filePath = path.Join(app.GetHomeDir(), "log", filePath)
+		}
+		sink, closeSink, err := zap.Open(filePath)
 		if err != nil {
 			cfg.cleanUp(closeSinks)
-			return nil, fmt.Errorf("failed to open output: file=%s, error=%w", file.Path, err)
+			return nil, err
 		}
 		closeSinks = append(closeSinks, closeSink)
 
@@ -89,14 +67,14 @@ func (cfg *LoggerConfig) Build() (*zap.Logger, error) {
 	errSink, _, err := zap.Open(cfg.ErrorOutputPaths...)
 	if err != nil {
 		cfg.cleanUp(closeSinks)
-		return nil, fmt.Errorf("failed to open error output: files=%v, error=%w", cfg.ErrorOutputPaths, err)
+		return nil, err
 	}
 
 	options := cfg.buildOptions(errSink)
 	return zap.New(zapcore.NewTee(cores...), options...), nil
 }
 
-func (cfg *LoggerConfig) buildOptions(errSink zapcore.WriteSyncer) []zap.Option {
+func (cfg *Config) buildOptions(errSink zapcore.WriteSyncer) []zap.Option {
 	opts := []zap.Option{zap.ErrorOutput(errSink)}
 
 	if cfg.Development {
@@ -137,13 +115,13 @@ func (cfg *LoggerConfig) buildOptions(errSink zapcore.WriteSyncer) []zap.Option 
 	return opts
 }
 
-func (cfg *LoggerConfig) getLevelEnabler(level zapcore.Level) zapcore.LevelEnabler {
+func (cfg *Config) getLevelEnabler(level zapcore.Level) zapcore.LevelEnabler {
 	return zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl == level
 	})
 }
 
-func (cfg *LoggerConfig) cleanUp(closeFuncs []func()) {
+func (cfg *Config) cleanUp(closeFuncs []func()) {
 	for _, f := range closeFuncs {
 		f()
 	}

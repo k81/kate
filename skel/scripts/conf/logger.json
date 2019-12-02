@@ -1,0 +1,15 @@
+{
+	"level": "info",
+	"sampling": {
+		"initial": 100,
+		"thereafter": 100
+	},
+	"outputPaths": {
+		"debug": "__APP_NAME__.debug",
+		"error": "__APP_NAME__.error",
+		"fatal": "__APP_NAME__.fatal",
+		"info": "__APP_NAME__.info",
+		"warn": "__APP_NAME__.warn"
+	},
+	"errorOutputPaths": ["__APP_NAME__.error"]
+}

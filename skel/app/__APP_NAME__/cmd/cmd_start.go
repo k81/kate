@@ -1,20 +1,20 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 
 	"github.com/k81/kate/app"
+	"github.com/k81/kate/logger"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
 	"__PROJECT_DIR__/config"
-	"__PROJECT_DIR__/httpsrv"
 	"__PROJECT_DIR__/profiling"
 )
-
-var logger, _ = zap.NewDevelopment()
 
 func NewStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -25,26 +25,30 @@ func NewStartCmd() *cobra.Command {
 	return cmd
 }
 
-func initLog() {
-	var (
-		cfg     = LoggerConfig{}
-		cfgPath = path.Join(app.GetHomeDir(), "conf", "logger.json")
-		err     error
-	)
-
-	if err = cfg.Load(cfgPath); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load logger config: error=%v", err)
+func initLog() *zap.Logger {
+	loggerCfgPath := path.Join(app.GetHomeDir(), "conf", "logger.json")
+	data, err := ioutil.ReadFile(loggerCfgPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read logger config: %v\n", err)
 		os.Exit(1)
 	}
 
-	if logger, err = cfg.Build(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to build logger: error=%v", err)
+	cfg := &logger.Config{}
+	if err = json.Unmarshal(data, cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to unmarshal logger config: %v\n", err)
 		os.Exit(1)
 	}
+
+	logger, err := cfg.Build()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "create logger failed: %v\n", err)
+		os.Exit(1)
+	}
+	return logger
 }
 
 func startCmdFunc(cmd *cobra.Command, args []string) {
-	initLog()
+	logger := initLog()
 
 	// load config
 	if err := config.Load(GlobalFlags.ConfigFile); err != nil {
@@ -59,16 +63,19 @@ func startCmdFunc(cmd *cobra.Command, args []string) {
 			logger.Fatal("panic", zap.Any("error", r), zap.Stack("stack"))
 		}
 
-		logger.Info("shutting down ...")
+		logger.Info("server shutting down ...")
 
 		app.RemovePIDFile()
-		logger.Info(fmt.Sprintf("%s stopped", app.GetName()))
+		logger.Info("server stopped")
 	}()
 
 	if config.Profiling.Enabled {
 		profiling.Start(config.Profiling.Port, logger)
 	}
 
-	logger.Info(fmt.Sprintf("%s started", app.GetName()))
-	httpsrv.ListenAndServe(logger)
+	logger.Info("server starting")
+
+	// TODO: server start here
+
+	logger.Info("server started", zap.String("k1", "v1"), zap.Any("k2", config.Profiling))
 }
