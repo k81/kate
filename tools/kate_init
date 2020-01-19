@@ -5,49 +5,7 @@ export APP_NAME=$(basename $APP_HOME)
 export X_OS_TYPE=$(uname)
 GOPATH=${GOPATH#:}
 
-echo '[1] pulling 3rd-party package'
-deps=(
-github.com/eapache/go-resiliency/breaker
-github.com/eapache/go-resiliency/retrier
-github.com/facebookgo/clock
-github.com/facebookgo/grace/gracehttp
-github.com/facebookgo/grace/gracenet
-github.com/facebookgo/httpdown
-github.com/facebookgo/stats
-github.com/garyburd/redigo/internal
-github.com/garyburd/redigo/redis
-github.com/kardianos/osext
-github.com/klauspost/crc32
-github.com/spf13/cobra
-github.com/sony/gobreaker
-github.com/julienschmidt/httprouter
-github.com/huandu/goroutine
-github.com/k81/govalidator
-github.com/k81/httpclient
-github.com/k81/orm
-go.uber.org/zap
-)
-
-for d in ${deps[*]}
-do
-    if [ ! -d ${GOPATH}/src/$d ]; then
-        echo "pulling $d"
-        go get $d
-    fi
-done
-
-if [ ! -d ${GOPATH}/src/golang.org/x/net/context ]; then
-    echo 'pulling golang.org/x/net/context'
-    mkdir -p ${GOPATH}/src/golang.org/x/
-    pushd . >/dev/null 2>&1
-    cd ${GOPATH}/src/golang.org/x/
-    git clone https://github.com/golang/net
-    popd >/dev/null 2>&1
-fi
-
-go get -insecure github.com/k81/kate
-
-echo '[2] initializing project'
+echo '[1] initializing project'
 KATE_DIR=$GOPATH/src/github.com/k81/kate
 SKEL_DIR=$KATE_DIR/skel
 
@@ -76,4 +34,4 @@ find . -type f -print |grep -v .git|xargs -n 1 -P 10 -I {} bash -c 'do_inflate "
 
 mv "${APP_HOME}/app/__APP_NAME__/" "${APP_HOME}/app/${APP_NAME}/"
 
-echo '[3] done.'
+echo '[2] done.'
