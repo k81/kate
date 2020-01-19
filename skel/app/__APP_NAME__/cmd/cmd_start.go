@@ -16,8 +16,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"__PROJECT_DIR__/config"
-	"__PROJECT_DIR__/profiling"
+	"__PACKAGE_NAME__/config"
+	"__PACKAGE_NAME__/profiling"
 )
 
 func NewStartCmd() *cobra.Command {

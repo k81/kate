@@ -38,7 +38,7 @@ endif
 endif
 
 ifneq ($(wildcard $(HOME_DIR)/vendor/github.com/k81/kate/*),)
-KATE_APP_PKG=__PROJECT_DIR__/vendor/github.com/k81/kate/app
+KATE_APP_PKG=__PACKAGE_NAME__/vendor/github.com/k81/kate/app
 else
 KATE_APP_PKG=github.com/k81/kate/app
 endif

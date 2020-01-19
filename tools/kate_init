@@ -38,4 +38,7 @@ find . -type f -print |grep -v .git|xargs -n 1 -P 10 -I {} bash -c 'do_inflate "
 
 mv "${APP_HOME}/app/__APP_NAME__/" "${APP_HOME}/app/${APP_NAME}/"
 
-echo '[2] done.'
+echo '[2] init go mod'
+go mod init ${PACKAGE_NAME}
+
+echo '[3] done.'

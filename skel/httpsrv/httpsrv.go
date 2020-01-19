@@ -7,7 +7,7 @@ import (
 	"github.com/k81/kate"
 	"go.uber.org/zap"
 
-	"__PROJECT_DIR__/config"
+	"__PACKAGE_NAME__/config"
 )
 
 var logger *zap.Logger
