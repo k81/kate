@@ -28,10 +28,10 @@ func init() {
 		_, _ = fmt.Fprintf(os.Stderr, "ERROR: get executable path, reason=%v\n", err)
 		os.Exit(1)
 	}
+
 	homeDir = path.Dir(path.Dir(bin))
 	name = path.Base(bin)
-	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".conf"))
-	os.Chdir(homeDir)
+	confFile = path.Join(homeDir, "conf", fmt.Sprint(name, ".ini"))
 }
 
 // GetName return the application name
@@ -67,9 +67,11 @@ func UpdatePIDFile(fileName string) error {
 	}
 
 	if err = ioutil.WriteFile(fileName, []byte(strconv.Itoa(pid)), 0666); err != nil {
-		return fmt.Errorf("failed to write pid: file=%v, pid=%v, error=%v", err)
+		return fmt.Errorf("failed to write pid: file=%v, pid=%v, error=%v", fileName, pid, err)
 	}
+
 	pidFile = fileName
+
 	return nil
 }
 

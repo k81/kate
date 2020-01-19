@@ -23,6 +23,7 @@ var (
 	LastDate string
 )
 
+// PrintVersion print the version info to stdout
 func PrintVersion() {
 	fmt.Println("Version:    ", fmt.Sprintf("%s.%s.%s", VersionMajor, VersionMinor, VersionPatch))
 	fmt.Println("Revision:   ", Revision)
@@ -31,6 +32,7 @@ func PrintVersion() {
 	fmt.Println("Build Date: ", BuildDate)
 }
 
+// LogVersion print the version info to logger
 func LogVersion(logger *zap.Logger) {
 	logger.Info("app info",
 		zap.String("version", fmt.Sprintf("%s.%s.%s", VersionMajor, VersionMinor, VersionPatch)),

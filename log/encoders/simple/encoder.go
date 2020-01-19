@@ -1,20 +1,22 @@
-package log
+package simple
 
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"math"
+	"os"
 	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/modern-go/gls"
+	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
 )
 
 var bufferpool = buffer.NewPool()
+var pid = os.Getpid()
 
 // For escaping; see encoder.safeAddString below.
 const _hex = "0123456789abcdef"
@@ -31,6 +33,7 @@ func putJSONEncoder(enc *encoder) {
 	if enc.reflectBuf != nil {
 		enc.reflectBuf.Free()
 	}
+
 	enc.buf = nil
 	enc.openNamespaces = 0
 	enc.reflectBuf = nil
@@ -127,11 +130,15 @@ func (enc *encoder) encodeReflected(obj interface{}) ([]byte, error) {
 	if obj == nil {
 		return nullLiteralBytes, nil
 	}
+
 	enc.resetReflectBuf()
+
 	if err := enc.reflectEnc.Encode(obj); err != nil {
 		return nil, err
 	}
+
 	enc.reflectBuf.TrimNewline()
+
 	return enc.reflectBuf.Bytes(), nil
 }
 
@@ -140,8 +147,10 @@ func (enc *encoder) AddReflected(key string, obj interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	enc.addKey(key)
 	_, err = enc.buf.Write(valueBytes)
+
 	return err
 }
 
@@ -171,6 +180,7 @@ func (enc *encoder) AppendArray(arr zapcore.ArrayMarshaler) error {
 	enc.buf.AppendByte('[')
 	err := arr.MarshalLogArray(enc)
 	enc.buf.AppendByte(']')
+
 	return err
 }
 
@@ -179,6 +189,7 @@ func (enc *encoder) AppendObject(obj zapcore.ObjectMarshaler) error {
 	enc.buf.AppendByte('{')
 	err := obj.MarshalLogObject(enc)
 	enc.buf.AppendByte('}')
+
 	return err
 }
 
@@ -197,7 +208,8 @@ func (enc *encoder) AppendByteString(val []byte) {
 func (enc *encoder) AppendComplex128(val complex128) {
 	enc.addElementSeparator()
 	// Cast to a platform-independent, fixed-size type.
-	r, i := float64(real(val)), float64(imag(val))
+	r, i := real(val), imag(val)
+
 	enc.buf.AppendByte('"')
 	// Because we're always in a quoted string, we can use strconv without
 	// special-casing NaN and +/-Inf.
@@ -211,6 +223,7 @@ func (enc *encoder) AppendComplex128(val complex128) {
 func (enc *encoder) AppendDuration(val time.Duration) {
 	cur := enc.buf.Len()
 	zapcore.NanosDurationEncoder(val, enc)
+
 	if cur == enc.buf.Len() {
 		// User-supplied EncodeDuration is a no-op. Fall back to nanoseconds to keep
 		// JSON valid.
@@ -228,8 +241,10 @@ func (enc *encoder) AppendReflected(val interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	enc.addElementSeparator()
 	_, err = enc.buf.Write(valueBytes)
+
 	return err
 }
 
@@ -243,6 +258,7 @@ func (enc *encoder) AppendString(val string) {
 func (enc *encoder) AppendTime(val time.Time) {
 	cur := enc.buf.Len()
 	zapcore.ISO8601TimeEncoder(val, enc)
+
 	if cur == enc.buf.Len() {
 		// User-supplied EncodeTime is a no-op. Fall back to nanos since epoch to keep
 		// output JSON valid.
@@ -281,7 +297,9 @@ func (enc *encoder) AppendUintptr(v uintptr)            { enc.AppendUint64(uint6
 
 func (enc *encoder) Clone() zapcore.Encoder {
 	clone := enc.clone()
+	// nolint:errcheck
 	clone.buf.Write(enc.buf.Bytes())
+
 	return clone
 }
 
@@ -289,37 +307,46 @@ func (enc *encoder) clone() *encoder {
 	clone := getEncoder()
 	clone.openNamespaces = enc.openNamespaces
 	clone.buf = bufferpool.Get()
+
 	return clone
 }
 
 func (enc *encoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	final := enc.clone()
 
-	fmt.Fprintf(final.buf, "[%s][%s][%d][%s]",
-		ent.Level.CapitalString(),
-		ent.Time.Format("2006-01-02T15:04:05.000Z0700"),
-		gls.GoID(),
-		ent.Caller.TrimmedPath(),
-	)
-	final.buf.AppendString(ent.Message)
+	final.buf.AppendByte('[')
+	final.buf.AppendString(ent.Level.CapitalString())
+	final.buf.AppendString("][")
+	final.buf.AppendString(ent.Time.Format("2006-01-02T15:04:05.000Z0700"))
+	final.buf.AppendString("][")
+	final.buf.AppendInt(int64(pid))
+	final.buf.AppendString("][")
+	final.buf.AppendInt(gls.GoID())
+	final.buf.AppendString("][")
+	final.buf.AppendString(ent.Caller.TrimmedPath())
+	final.buf.AppendByte(']')
+
+	final.buf.AppendByte('{')
+	final.addKey("msg")
+	final.AppendString(ent.Message)
 
 	if enc.buf.Len() > 0 || len(fields) > 0 {
-		final.buf.AppendString("||")
-
-		final.buf.AppendByte('{')
 		if enc.buf.Len() > 0 {
 			final.addElementSeparator()
+			// nolint:errcheck
 			final.buf.Write(enc.buf.Bytes())
 		}
+
 		final.addFields(fields)
 		final.closeOpenNamespaces()
-		final.buf.AppendByte('}')
 	}
 
+	final.buf.AppendByte('}')
 	final.buf.AppendString(zapcore.DefaultLineEnding)
 
 	ret := final.buf
 	putJSONEncoder(final)
+
 	return ret, nil
 }
 
@@ -346,6 +373,7 @@ func (enc *encoder) addElementSeparator() {
 	if last < 0 {
 		return
 	}
+
 	switch enc.buf.Bytes()[last] {
 	case '{', '[', ':', ',', ' ':
 		return
@@ -356,6 +384,7 @@ func (enc *encoder) addElementSeparator() {
 
 func (enc *encoder) appendFloat(val float64, bitSize int) {
 	enc.addElementSeparator()
+
 	switch {
 	case math.IsNaN(val):
 		enc.buf.AppendString(`"NaN"`)
@@ -377,11 +406,13 @@ func (enc *encoder) safeAddString(s string) {
 			i++
 			continue
 		}
+
 		r, size := utf8.DecodeRuneInString(s[i:])
 		if enc.tryAddRuneError(r, size) {
 			i++
 			continue
 		}
+
 		enc.buf.AppendString(s[i : i+size])
 		i += size
 	}
@@ -394,11 +425,14 @@ func (enc *encoder) safeAddByteString(s []byte) {
 			i++
 			continue
 		}
+
 		r, size := utf8.DecodeRune(s[i:])
 		if enc.tryAddRuneError(r, size) {
 			i++
 			continue
 		}
+
+		// nolint:errcheck
 		enc.buf.Write(s[i : i+size])
 		i += size
 	}
@@ -409,10 +443,12 @@ func (enc *encoder) tryAddRuneSelf(b byte) bool {
 	if b >= utf8.RuneSelf {
 		return false
 	}
+
 	if 0x20 <= b && b != '\\' && b != '"' {
 		enc.buf.AppendByte(b)
 		return true
 	}
+
 	switch b {
 	case '\\', '"':
 		enc.buf.AppendByte('\\')
@@ -432,6 +468,7 @@ func (enc *encoder) tryAddRuneSelf(b byte) bool {
 		enc.buf.AppendByte(_hex[b>>4])
 		enc.buf.AppendByte(_hex[b&0xF])
 	}
+
 	return true
 }
 
@@ -440,6 +477,7 @@ func (enc *encoder) tryAddRuneError(r rune, size int) bool {
 		enc.buf.AppendString(`\ufffd`)
 		return true
 	}
+
 	return false
 }
 
@@ -447,4 +485,11 @@ func (enc *encoder) addFields(fields []zapcore.Field) {
 	for i := range fields {
 		fields[i].AddTo(enc)
 	}
+}
+
+func init() {
+	// nolint: errcheck
+	zap.RegisterEncoder("simple", func(config zapcore.EncoderConfig) (encoder zapcore.Encoder, e error) {
+		return NewEncoder(), nil
+	})
 }

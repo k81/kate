@@ -55,7 +55,11 @@ all:
 	@echo "make: PWD=$(shell pwd)"
 	@echo "make: GOROOT=$(GOROOT)"
 	@echo "make: GOPATH=$(GOPATH)"
-	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN) $(__APP_NAME___SRC)
+	@echo "make: CGO_CFLAGS=$(CGO_CFLAGS)"
+	@echo "make: CGO_LDFLAGS=$(CGO_LDFLAGS)"
+	@echo "make: LIBRARY_PATH=$(LIBRARY_PATH)"
+	@echo "make: LD_LIBRARY_PATH=$(LD_LIBRARY_PATH)"
+	$(GO) build -mod vendor -ldflags "$(LDFLAGS)" -o $(BIN) $(__APP_NAME___SRC)
 
 lint:
 	$(LINT) run

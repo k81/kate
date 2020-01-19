@@ -3,7 +3,10 @@ module github.com/k81/kate
 go 1.12
 
 require (
+	github.com/cloudflare/tableflip v1.0.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/garyburd/redigo v1.6.0
+	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/k81/dynamic v1.0.1
@@ -18,7 +21,7 @@ require (
 	github.com/sony/gobreaker v0.4.1
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0
-	go.uber.org/atomic v1.5.1 // indirect
+	go.uber.org/atomic v1.5.1
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
