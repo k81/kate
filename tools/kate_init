@@ -1,6 +1,10 @@
 #!/bin/bash
+if [ $# -ne 1 ]; then
+    printf "Usage: %s PACKAGE_NAME\n" $0
+    exit 1
+fi
 export APP_HOME=$(pwd -P)
-export PROJECT_DIR=${APP_HOME#*/src/}
+export PACKAGE_NAME=$1
 export APP_NAME=$(basename $APP_HOME)
 export X_OS_TYPE=$(uname)
 GOPATH=${GOPATH#:}
@@ -22,10 +26,10 @@ function do_inflate() {
     #echo "inflating ... $f"
     if [ $X_OS_TYPE = 'Darwin' ];then
         sed -i '' -e "s:__APP_NAME__:$APP_NAME:g" $f
-        sed -i '' -e "s:__PROJECT_DIR__:$PROJECT_DIR:g" $f
+        sed -i '' -e "s:__PACKAGE_NAME__:$PACKAGE_NAME:g" $f
     else
         sed -i -e "s:__APP_NAME__:$APP_NAME:g" $f
-        sed -i -e "s:__PROJECT_DIR__:$PROJECT_DIR:g" $f
+        sed -i -e "s:__PACKAGE_NAME__:$PACKAGE_NAME:g" $f
     fi
 }
 
