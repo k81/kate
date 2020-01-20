@@ -16,6 +16,8 @@ type HTTPConfig struct {
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
 	MaxBodyBytes   int64
+	LogFile        string
+	LogSampler     LogSamplerConfig
 }
 
 // SectionName implements the `Config.SectionName()` method
@@ -30,5 +32,9 @@ func (conf *HTTPConfig) Load(section *ini.Section) error {
 	conf.WriteTimeout = section.Key("write_timeout").MustDuration(0)
 	conf.MaxHeaderBytes = section.Key("max_header_bytes").MustInt(1048576)
 	conf.MaxBodyBytes = section.Key("max_body_bytes").MustInt64(1073741824)
+	conf.LogFile = section.Key("log_file").MustString("__APP_NAME__.access")
+	conf.LogSampler.Tick = section.Key("log_sampler_tick").MustDuration(time.Second)
+	conf.LogSampler.First = section.Key("log_sampler_first").MustInt(100)
+	conf.LogSampler.ThereAfter = section.Key("log_sampler_thereafter").MustInt(10000)
 	return nil
 }

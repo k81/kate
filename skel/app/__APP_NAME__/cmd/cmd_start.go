@@ -17,6 +17,8 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"__PACKAGE_NAME__/config"
+	"__PACKAGE_NAME__/grpcsrv"
+	"__PACKAGE_NAME__/httpsrv"
 	"__PACKAGE_NAME__/profiling"
 )
 
@@ -79,6 +81,12 @@ func startCmdFunc(_ *cobra.Command, _ []string) {
 		logger.Fatal("failed to create upgrader", zap.Error(err))
 	}
 	defer upgrader.Stop()
+
+	grpcsrv.Start(upgrader, logger)
+	defer grpcsrv.Stop()
+
+	httpsrv.Start(upgrader, logger)
+	defer httpsrv.Stop()
 
 	logger.Info("server started")
 

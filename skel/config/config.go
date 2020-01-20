@@ -32,6 +32,7 @@ func Load(file string) error {
 		DB,
 		Redis,
 		HTTP,
+		GRPC,
 	}
 
 	for _, config := range configs {

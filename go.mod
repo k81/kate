@@ -27,5 +27,6 @@ require (
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d // indirect
 	google.golang.org/appengine v1.6.5 // indirect
+	google.golang.org/grpc v1.26.0
 	gopkg.in/ini.v1 v1.51.0
 )
