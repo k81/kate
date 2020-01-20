@@ -75,6 +75,9 @@ func (s *grpcService) serve() {
 
 	s.server = grpc.NewServer()
 
+	// TODO: register grpc server impl here
+	// proto.RegisterXXXServer(s.server, impl)
+
 	s.logger.Info("grpc service started listening", zap.String("addr", s.conf.Addr))
 
 	if err = s.server.Serve(s.listener); err != nil {
