@@ -11,7 +11,7 @@ import (
 
 var (
 	RotateSignal = syscall.SIGUSR1
-	OpenFlag     = os.O_CREATE | os.O_APPEND | os.O_WRONLY | syscall.O_DSYNC
+	OpenFlag     = os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	OpenPerm     = os.FileMode(0644)
 )
 
