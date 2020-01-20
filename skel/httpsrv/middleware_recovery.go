@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/k81/kate"
+	"github.com/k81/kate/log/ctxzap"
 	"go.uber.org/zap"
 )
 
@@ -16,7 +17,7 @@ func Recovery(h kate.ContextHandler) kate.ContextHandler {
 				w.WriteHeader(http.StatusInternalServerError)
 				// nolint:errcheck
 				w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-				logger.Error("got panic", zap.Any("error", err), zap.Stack("stack"))
+				ctxzap.Extract(ctx).Error("got panic", zap.Any("error", err), zap.Stack("stack"))
 			}
 		}()
 

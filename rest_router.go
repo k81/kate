@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/k81/kate/log/ctxzap"
 	"go.uber.org/zap"
 )
 
@@ -12,15 +13,13 @@ type RESTRouter struct {
 	*httprouter.Router
 	maxBodyBytes int64
 	ctx          context.Context
-	logger       *zap.Logger
 }
 
 // NewRESTRouter create a REST router
 func NewRESTRouter(ctx context.Context, logger *zap.Logger) *RESTRouter {
 	r := &RESTRouter{
 		Router: httprouter.New(),
-		ctx:    ctx,
-		logger: logger,
+		ctx:    ctxzap.ToContext(ctx, logger),
 	}
 	r.Router.RedirectTrailingSlash = false
 	r.Router.RedirectFixedPath = false
@@ -34,7 +33,7 @@ func (r *RESTRouter) SetMaxBodyBytes(n int64) {
 
 // Handle register a http handler for the specified method and path
 func (r *RESTRouter) Handle(method, pattern string, h ContextHandler) {
-	r.Router.Handle(method, pattern, Handle(r.ctx, h, r.maxBodyBytes, r.logger))
+	r.Router.Handle(method, pattern, Handle(r.ctx, h, r.maxBodyBytes))
 }
 
 // HandleFunc register a http handler for the specified method and path

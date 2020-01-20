@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/k81/kate/log/ctxzap"
 	"go.uber.org/zap"
 )
 
@@ -24,13 +25,14 @@ func (h ContextHandlerFunc) ServeHTTP(ctx context.Context, w ResponseWriter, r *
 }
 
 // Handle adapte the ContextHandler to httprouter.Handle func
-func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64, logger *zap.Logger) httprouter.Handle {
+func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64) httprouter.Handle {
 	f := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		var (
 			request        *Request
 			response       *responseWriter
 			err            error
 			newctx, cancel = context.WithCancel(ctx)
+			logger         = ctxzap.Extract(ctx)
 		)
 
 		defer cancel()
@@ -77,13 +79,14 @@ func Handle(ctx context.Context, h ContextHandler, maxBodyBytes int64, logger *z
 }
 
 // StdHandler adapte ContextHandler to http.Handler interface
-func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64, logger *zap.Logger) http.Handler {
+func StdHandler(ctx context.Context, h ContextHandler, maxBodyBytes int64) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		var (
 			request        *Request
 			response       *responseWriter
 			err            error
 			newctx, cancel = context.WithCancel(ctx)
+			logger         = ctxzap.Extract(ctx)
 		)
 
 		defer cancel()

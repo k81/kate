@@ -5,13 +5,17 @@ import (
 	"time"
 
 	"github.com/k81/kate"
+	"github.com/k81/kate/log/ctxzap"
 	"go.uber.org/zap"
 )
 
 // Logging implements the request in/out logging middleware
 func Logging(h kate.ContextHandler) kate.ContextHandler {
 	f := func(ctx context.Context, w kate.ResponseWriter, r *kate.Request) {
-		var start = time.Now()
+		var (
+			start  = time.Now()
+			logger = ctxzap.Extract(ctx)
+		)
 
 		logger.Info("request in",
 			zap.String("remote", r.RemoteAddr),

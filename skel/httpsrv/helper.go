@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/k81/kate/log/ctxzap"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +26,7 @@ func Error(ctx context.Context, w http.ResponseWriter, err interface{}) {
 	}
 
 	if err := WriteJSON(w, result); err != nil {
-		logger.Error("write json response", zap.Error(err))
+		ctxzap.Extract(ctx).Error("write json response", zap.Error(err))
 	}
 }
 
@@ -43,7 +44,7 @@ func OKData(ctx context.Context, w http.ResponseWriter, data interface{}) {
 	}
 
 	if err := WriteJSON(w, result); err != nil {
-		logger.Error("write json response", zap.Error(err))
+		ctxzap.Extract(ctx).Error("write json response", zap.Error(err))
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/k81/govalidator"
 	"github.com/k81/kate"
+	"github.com/k81/kate/log/ctxzap"
 	"github.com/k81/kate/utils"
 	"go.uber.org/zap"
 )
@@ -33,6 +34,8 @@ type BaseHandler struct{}
 // ParseRequest parses and validates the api request
 // nolint:lll,gocyclo
 func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req interface{}) error {
+	logger := ctxzap.Extract(ctx)
+
 	// decode json
 	if r.ContentLength != 0 {
 		if err := h.parseBody(req, r); err != nil {
