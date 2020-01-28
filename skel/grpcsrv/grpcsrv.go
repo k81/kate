@@ -2,6 +2,7 @@ package grpcsrv
 
 import (
 	"net"
+	"sync"
 
 	"github.com/cloudflare/tableflip"
 	"github.com/k81/kate/log"
@@ -20,6 +21,7 @@ type grpcService struct {
 	upgrader     *tableflip.Upgrader
 	listener     net.Listener
 	server       *grpc.Server
+	wg           sync.WaitGroup
 	logger       *zap.Logger
 	accessLogger *zap.Logger
 }
@@ -30,30 +32,12 @@ func Start(upgrader *tableflip.Upgrader, logger *zap.Logger) {
 		panic("grpcsrv start twice")
 	}
 
-	var (
-		enc  = simple.NewEncoder()
-		core = zapcore.NewSampler(
-			log.MustNewCore(zapcore.InfoLevel, config.GRPC.LogFile, enc),
-			config.GRPC.LogSampler.Tick,
-			config.GRPC.LogSampler.First,
-			config.GRPC.LogSampler.ThereAfter)
-	)
-
-	opts := []zap.Option{
-		zap.AddStacktrace(zap.ErrorLevel),
-		zap.AddCaller(),
-	}
-
-	accessLogger := zap.New(core, opts...)
-
 	gService = &grpcService{
-		conf:         *config.GRPC,
-		upgrader:     upgrader,
-		logger:       logger.Named("grpcsrv"),
-		accessLogger: accessLogger,
+		conf:     *config.GRPC,
+		upgrader: upgrader,
+		logger:   logger.Named("grpcsrv"),
 	}
-
-	go gService.serve()
+	gService.start()
 }
 
 // Stop stop the grpc service
@@ -63,7 +47,33 @@ func Stop() {
 	}
 }
 
+func (s *grpService) start() {
+	var (
+		enc  = simple.NewEncoder()
+		core = zapcore.NewSampler(
+			log.MustNewCore(zapcore.InfoLevel, s.conf.LogFile, enc),
+			s.conf.LogSampler.Tick,
+			s.conf.LogSampler.First,
+			s.conf.LogSampler.ThereAfter)
+	)
+
+	opts := []zap.Option{
+		zap.AddStacktrace(zap.ErrorLevel),
+		zap.AddCaller(),
+	}
+
+	s.accessLogger = zap.New(core, opts...)
+
+	gService.wg.Add(1)
+	go gService.serve()
+}
+
 func (s *grpcService) serve() {
+	defer func() {
+		s.wg.Done()
+		s.logger.Info("grpc service stopped")
+	}()
+
 	var err error
 
 	if s.listener, err = s.upgrader.Listen("tcp", s.conf.Addr); err != nil {
@@ -87,4 +97,5 @@ func (s *grpcService) serve() {
 
 func (s *grpcService) stop() {
 	s.server.GracefulStop()
+	gService.wg.Wait()
 }

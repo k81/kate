@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/cloudflare/tableflip"
 	"github.com/k81/kate"
@@ -22,6 +23,7 @@ type httpService struct {
 	upgrader     *tableflip.Upgrader
 	listener     net.Listener
 	server       *http.Server
+	wg           sync.WaitGroup
 	logger       *zap.Logger
 	accessLogger *zap.Logger
 }
@@ -32,30 +34,12 @@ func Start(upgrader *tableflip.Upgrader, logger *zap.Logger) {
 		panic("httpsrv start twice")
 	}
 
-	var (
-		enc  = simple.NewEncoder()
-		core = zapcore.NewSampler(
-			log.MustNewCore(zapcore.InfoLevel, config.HTTP.LogFile, enc),
-			config.HTTP.LogSampler.Tick,
-			config.HTTP.LogSampler.First,
-			config.HTTP.LogSampler.ThereAfter)
-	)
-
-	opts := []zap.Option{
-		zap.AddStacktrace(zap.ErrorLevel),
-		zap.AddCaller(),
-	}
-
-	accessLogger := zap.New(core, opts...)
-
 	gService = &httpService{
-		conf:         *config.HTTP,
-		upgrader:     upgrader,
-		logger:       logger.Named("httpsrv"),
-		accessLogger: accessLogger,
+		conf:     *config.HTTP,
+		upgrader: upgrader,
+		logger:   logger.Named("httpsrv"),
 	}
-
-	go gService.serve()
+	gService.start()
 }
 
 // Stop stop the http service
@@ -65,7 +49,33 @@ func Stop() {
 	}
 }
 
+func (s *httpService) start() {
+	var (
+		enc  = simple.NewEncoder()
+		core = zapcore.NewSampler(
+			log.MustNewCore(zapcore.InfoLevel, s.conf.LogFile, enc),
+			s.conf.LogSampler.Tick,
+			s.conf.LogSampler.First,
+			s.conf.LogSampler.ThereAfter)
+	)
+
+	opts := []zap.Option{
+		zap.AddStacktrace(zap.ErrorLevel),
+		zap.AddCaller(),
+	}
+
+	s.accessLogger = zap.New(core, opts...)
+
+	s.wg.Add(1)
+	go gService.serve()
+}
+
 func (s *httpService) serve() {
+	defer func() {
+		s.wg.Done()
+		s.logger.Info("http service stopped")
+	}()
+
 	var err error
 
 	// 定义中间件栈，可根据需要在下面追加
@@ -106,4 +116,5 @@ func (s *httpService) stop() {
 	if err := s.server.Shutdown(context.TODO()); err != nil {
 		s.logger.Error("http service shutdown failed", zap.Error(err))
 	}
+	s.wg.Wait()
 }
