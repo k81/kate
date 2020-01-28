@@ -64,8 +64,8 @@ func (s *grpService) start() {
 
 	s.accessLogger = zap.New(core, opts...)
 
-	gService.wg.Add(1)
-	go gService.serve()
+	s.wg.Add(1)
+	go s.serve()
 }
 
 func (s *grpcService) serve() {
@@ -97,5 +97,5 @@ func (s *grpcService) serve() {
 
 func (s *grpcService) stop() {
 	s.server.GracefulStop()
-	gService.wg.Wait()
+	s.wg.Wait()
 }

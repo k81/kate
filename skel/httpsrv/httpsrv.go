@@ -67,7 +67,7 @@ func (s *httpService) start() {
 	s.accessLogger = zap.New(core, opts...)
 
 	s.wg.Add(1)
-	go gService.serve()
+	go s.serve()
 }
 
 func (s *httpService) serve() {
