@@ -52,12 +52,17 @@ func Stop() {
 func (s *httpService) start() {
 	var (
 		enc  = simple.NewEncoder()
+		core = log.MustNewCore(zapcore.InfoLevel, s.conf.LogFile, enc)
+	)
+
+	if s.conf.LogSampler.Enabled {
 		core = zapcore.NewSampler(
-			log.MustNewCore(zapcore.InfoLevel, s.conf.LogFile, enc),
+			core,
 			s.conf.LogSampler.Tick,
 			s.conf.LogSampler.First,
-			s.conf.LogSampler.ThereAfter)
-	)
+			s.conf.LogSampler.ThereAfter,
+		)
+	}
 
 	opts := []zap.Option{
 		zap.AddStacktrace(zap.ErrorLevel),

@@ -33,6 +33,7 @@ func (conf *HTTPConfig) Load(section *ini.Section) error {
 	conf.MaxHeaderBytes = section.Key("max_header_bytes").MustInt(1048576)
 	conf.MaxBodyBytes = section.Key("max_body_bytes").MustInt64(1073741824)
 	conf.LogFile = section.Key("log_file").MustString("__APP_NAME__.access")
+	conf.LogSampler.Enabled = section.Key("log_sampler_enabled").MustBool(false)
 	conf.LogSampler.Tick = section.Key("log_sampler_tick").MustDuration(time.Second)
 	conf.LogSampler.First = section.Key("log_sampler_first").MustInt(100)
 	conf.LogSampler.ThereAfter = section.Key("log_sampler_thereafter").MustInt(10000)
