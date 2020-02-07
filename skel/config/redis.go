@@ -25,6 +25,7 @@ func (conf *RedisConfig) SectionName() string {
 func (conf *RedisConfig) Load(section *ini.Section) error {
 	addrs := section.Key("addrs").MustString("127.0.0.1:6379")
 	conf.Addrs = strings.Split(addrs, ",")
+	conf.ClusterEnabled = section.Key("cluster_enabled").MustBool(true)
 	conf.RouteMode = section.Key("route_mode").MustString("master_slave_random")
 	conf.MaxRedirects = section.Key("max_redirects").MustInt(8)
 	conf.MaxRetries = section.Key("max_retries").MustInt(0)
