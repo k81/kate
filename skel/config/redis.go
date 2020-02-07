@@ -14,8 +14,6 @@ var Redis = &RedisConfig{Config: &rdb.Config{}}
 // Config defines the redis config
 type RedisConfig struct {
 	*rdb.Config
-	CacheTimeout   time.Duration
-	CacheSizeLimit int
 }
 
 // SectionName implements the `Config.SectionName()` method
@@ -41,8 +39,6 @@ func (conf *RedisConfig) Load(section *ini.Section) error {
 	conf.PoolTimeout = section.Key("pool_timeout").MustDuration(20 * time.Millisecond)
 	conf.IdleTimeout = section.Key("idle_timeout").MustDuration(30 * time.Second)
 	conf.IdleCheckFrequency = section.Key("idle_check_frequency").MustDuration(0)
-	conf.CacheTimeout = section.Key("cache_timeout").MustDuration(time.Minute * 10)
-	conf.CacheSizeLimit = section.Key("cache_size_limit").MustInt(1024 * 1024 * 1024)
 
 	return nil
 }

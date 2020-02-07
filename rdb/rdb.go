@@ -15,9 +15,18 @@ const (
 	RouteModeMasterSlaveLatency = "master_slave_latency"
 )
 
+// Client is the client interface for redis db
+type Client interface {
+	redis.Cmdable
+	Do(args ...interface{}) *redis.Cmd
+	Process(cmd redis.Cmder) error
+	Close() error
+}
+
 // Config defines the redis config
 type Config struct {
 	Addrs              []string
+	ClusterEnabled     bool
 	ReadOnly           bool
 	RouteMode          string
 	MaxRedirects       int
@@ -35,10 +44,38 @@ type Config struct {
 	IdleCheckFrequency time.Duration
 }
 
-var rdb *redis.ClusterClient
+var rdb Client
 
 // Init initialize the redis cluster instance
 func Init(conf *Config) {
+	if conf.ClusterEnabled {
+		rdb = newClusterClient(conf)
+	} else {
+		rdb = newClient(conf)
+	}
+}
+
+func newClient(conf *Config) *redis.Client {
+	opt := &redis.Options{
+		Addr:               conf.Addrs[0],
+		MaxRetries:         conf.MaxRetries,
+		MinRetryBackoff:    conf.MinRetryBackoff,
+		MaxRetryBackoff:    conf.MaxRetryBackoff,
+		DialTimeout:        conf.ConnectTimeout,
+		ReadTimeout:        conf.ReadTimeout,
+		WriteTimeout:       conf.WriteTimeout,
+		PoolSize:           conf.PoolSize,
+		MinIdleConns:       conf.MinIdleConns,
+		MaxConnAge:         conf.MaxConnAge,
+		PoolTimeout:        conf.PoolTimeout,
+		IdleTimeout:        conf.IdleTimeout,
+		IdleCheckFrequency: conf.IdleCheckFrequency,
+	}
+
+	return redis.NewClient(opt)
+}
+
+func newClusterClient(conf *Config) *redis.ClusterClient {
 	opt := &redis.ClusterOptions{
 		Addrs:              conf.Addrs,
 		MaxRedirects:       conf.MaxRedirects,
@@ -65,7 +102,7 @@ func Init(conf *Config) {
 		opt.RouteByLatency = true
 	}
 
-	rdb = redis.NewClusterClient(opt)
+	return redis.NewClusterClient(opt)
 }
 
 // Uninit do the clean up for the global RedisConnectionManager instance
@@ -77,6 +114,6 @@ func Uninit() {
 }
 
 // Get() return the rdb client instance
-func Get() *redis.ClusterClient {
+func Get() Client {
 	return rdb
 }
