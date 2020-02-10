@@ -2,7 +2,6 @@ package log
 
 import (
 	"fmt"
-	"os"
 	"path"
 
 	"go.uber.org/zap"
@@ -19,8 +18,7 @@ func MustNewCore(level zapcore.Level, location string, enc zapcore.Encoder) zapc
 
 	writer, err := NewWriter(location)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create file sink: %v, %v", location, err)
-		os.Exit(1)
+		panic(fmt.Errorf("failed to create file sink: %v, %v", location, err))
 	}
 
 	levelEnabler := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
