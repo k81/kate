@@ -11,7 +11,6 @@ import (
 	"github.com/cloudflare/tableflip"
 	"github.com/k81/kate/app"
 	"github.com/k81/kate/log"
-	"github.com/k81/kate/log/encoders/simple"
 	"github.com/k81/kate/rdb"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -95,7 +94,7 @@ func startCmdFunc(_ *cobra.Command, _ []string) {
 }
 
 func initLog() *zap.Logger {
-	enc := simple.NewEncoder()
+	enc := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 
 	core := zapcore.NewTee(
 		log.MustNewCore(zapcore.DebugLevel, path.Join(config.Main.LogDir, "debug.log"), enc),

@@ -10,7 +10,6 @@ import (
 	"github.com/cloudflare/tableflip"
 	"github.com/k81/kate"
 	"github.com/k81/kate/log"
-	"github.com/k81/kate/log/encoders/simple"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -52,7 +51,7 @@ func Stop() {
 
 func (s *httpService) start() {
 	var (
-		enc  = simple.NewEncoder()
+		enc  = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 		core = log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, s.conf.LogFile), enc)
 	)
 
