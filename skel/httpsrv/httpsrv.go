@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"path"
 	"sync"
 
 	"github.com/cloudflare/tableflip"
@@ -52,7 +53,7 @@ func Stop() {
 func (s *httpService) start() {
 	var (
 		enc  = simple.NewEncoder()
-		core = log.MustNewCore(zapcore.InfoLevel, s.conf.LogFile, enc)
+		core = log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, s.conf.LogFile), enc)
 	)
 
 	if s.conf.LogSampler.Enabled {

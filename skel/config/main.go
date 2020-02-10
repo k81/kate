@@ -14,6 +14,7 @@ var Main = &MainConfig{}
 // MainConfig defines the Main config
 type MainConfig struct {
 	PIDFile string
+	LogDir  string
 }
 
 // SectionName implements the `Config.SectionName()` method
@@ -25,5 +26,6 @@ func (conf *MainConfig) SectionName() string {
 func (conf *MainConfig) Load(section *ini.Section) error {
 	defaultPIDFile := path.Join(app.GetHomeDir(), "run", fmt.Sprintf("%s.pid", app.GetName()))
 	conf.PIDFile = section.Key("pid_file").MustString(defaultPIDFile)
+	conf.LogDir = section.Key("log_dir").MustString("")
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -97,11 +98,11 @@ func initLog() *zap.Logger {
 	enc := simple.NewEncoder()
 
 	core := zapcore.NewTee(
-		log.MustNewCore(zapcore.DebugLevel, "__APP_NAME__.debug", enc),
-		log.MustNewCore(zapcore.InfoLevel, "__APP_NAME__.info", enc),
-		log.MustNewCore(zapcore.WarnLevel, "__APP_NAME__.warn", enc),
-		log.MustNewCore(zapcore.ErrorLevel, "__APP_NAME__.error", enc),
-		log.MustNewCore(zapcore.FatalLevel, "__APP_NAME__.fatal", enc),
+		log.MustNewCore(zapcore.DebugLevel, path.Join(config.Main.LogDir, "debug.log"), enc),
+		log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, "info.log"), enc),
+		log.MustNewCore(zapcore.WarnLevel, path.Join(config.Main.LogDir, "warn.log"), enc),
+		log.MustNewCore(zapcore.ErrorLevel, path.Join(config.Main.LogDir, "error.log"), enc),
+		log.MustNewCore(zapcore.FatalLevel, path.Join(config.Main.LogDir, "fatal.log"), enc),
 	)
 
 	opts := []zap.Option{
