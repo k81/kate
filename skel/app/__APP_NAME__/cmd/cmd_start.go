@@ -34,17 +34,17 @@ func NewStartCmd() *cobra.Command {
 func startCmdFunc(_ *cobra.Command, _ []string) {
 	os.Chdir(app.GetHomeDir())
 
+	// load config
+	if err := config.Load(GlobalFlags.ConfigFile); err != nil {
+		fmt.Fprintf(os.Stderr, "load config failed: file=%s, error=%v\n", GlobalFlags.ConfigFile, err)
+	}
+
 	logger := initLog()
 	defer func() {
 		if err := logger.Sync(); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "failed to flush log: %v", err)
 		}
 	}()
-
-	// load config
-	if err := config.Load(GlobalFlags.ConfigFile); err != nil {
-		logger.Fatal("load config failed", zap.String("file", GlobalFlags.ConfigFile), zap.Error(err))
-	}
 
 	// update pid
 	if err := app.UpdatePIDFile(config.Main.PIDFile); err != nil {
