@@ -111,7 +111,7 @@ func (s *httpService) serve() {
 
 	s.logger.Info("http service started listening", zap.String("addr", s.conf.Addr))
 
-	if err = s.server.Serve(s.listener); err != nil {
+	if err := s.server.Serve(s.listener); err != nil {
 		s.logger.Fatal("failed to serve http service", zap.Error(err))
 	}
 }
