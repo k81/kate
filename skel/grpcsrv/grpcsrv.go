@@ -51,6 +51,7 @@ func (s *grpService) start() {
 	var (
 		enc  = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 		core = log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, s.conf.LogFile), enc)
+		err  error
 	)
 
 	if s.conf.LogSampler.Enabled {
@@ -69,18 +70,6 @@ func (s *grpService) start() {
 
 	s.accessLogger = zap.New(core, opts...)
 
-	s.wg.Add(1)
-	go s.serve()
-}
-
-func (s *grpcService) serve() {
-	defer func() {
-		s.wg.Done()
-		s.logger.Info("grpc service stopped")
-	}()
-
-	var err error
-
 	if s.listener, err = s.upgrader.Listen("tcp", s.conf.Addr); err != nil {
 		s.logger.Fatal("grpc listen failed",
 			zap.String("addr", s.conf.Addr),
@@ -92,6 +81,16 @@ func (s *grpcService) serve() {
 
 	// TODO: register grpc server impl here
 	// proto.RegisterXXXServer(s.server, impl)
+
+	s.wg.Add(1)
+	go s.serve()
+}
+
+func (s *grpcService) serve() {
+	defer func() {
+		s.wg.Done()
+		s.logger.Info("grpc service stopped")
+	}()
 
 	s.logger.Info("grpc service started listening", zap.String("addr", s.conf.Addr))
 

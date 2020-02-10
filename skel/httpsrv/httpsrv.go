@@ -53,6 +53,7 @@ func (s *httpService) start() {
 	var (
 		enc  = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 		core = log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, s.conf.LogFile), enc)
+		err  error
 	)
 
 	if s.conf.LogSampler.Enabled {
@@ -70,18 +71,6 @@ func (s *httpService) start() {
 	}
 
 	s.accessLogger = zap.New(core, opts...)
-
-	s.wg.Add(1)
-	go s.serve()
-}
-
-func (s *httpService) serve() {
-	defer func() {
-		s.wg.Done()
-		s.logger.Info("http service stopped")
-	}()
-
-	var err error
 
 	// 定义中间件栈，可根据需要在下面追加
 	c := kate.NewChain(
@@ -109,6 +98,16 @@ func (s *httpService) serve() {
 			zap.Error(err),
 		)
 	}
+
+	s.wg.Add(1)
+	go s.serve()
+}
+
+func (s *httpService) serve() {
+	defer func() {
+		s.wg.Done()
+		s.logger.Info("http service stopped")
+	}()
 
 	s.logger.Info("http service started listening", zap.String("addr", s.conf.Addr))
 
