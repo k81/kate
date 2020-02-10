@@ -28,6 +28,11 @@ func (r *Router) SetMaxBodyBytes(n int64) {
 	r.maxBodyBytes = n
 }
 
+// StdHandle register a standard http handler for the specified path
+func (r *Router) StdHandle(pattern string, h http.Handler) {
+	r.ServeMux.Handle(pattern, h)
+}
+
 // Handle register a http handler for the specified path
 func (r *Router) Handle(pattern string, h ContextHandler) {
 	r.ServeMux.Handle(pattern, StdHandler(r.ctx, h, r.maxBodyBytes))
