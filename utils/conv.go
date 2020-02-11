@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"unsafe"
 )
 
 // GetBool convert interface to bool.
@@ -253,4 +254,16 @@ func GetByKind(kind reflect.Kind, v interface{}) (result interface{}) {
 		result = v
 	}
 	return result
+}
+
+// Str2Bytes convert string to []byte without copy
+func Str2Bytes(s string) []byte {
+	x := (*[2]uintptr)(unsafe.Pointer(&s))
+	h := [3]uintptr{x[0], x[1], x[1]}
+	return *(*[]byte)(unsafe.Pointer(&h))
+}
+
+// Bytes2Str convert []byte to string without copy
+func Bytes2Str(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
