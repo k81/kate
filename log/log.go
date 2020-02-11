@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"os"
 	"path"
 
 	"go.uber.org/zap"
@@ -15,6 +16,8 @@ func MustNewCore(level zapcore.Level, location string, enc zapcore.Encoder) zapc
 	if !path.IsAbs(location) {
 		location = path.Join(app.GetHomeDir(), "log", location)
 	}
+
+	os.MkdirAll(path.Dir(location), 0755)
 
 	writer, err := NewWriter(location)
 	if err != nil {
