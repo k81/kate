@@ -12,7 +12,7 @@ type Mmap struct {
 }
 
 func New(size int) (*Mmap, error) {
-	data, err := syscall.Mmap(-1, 0, size, syscall.PROT_WRITE|syscall.PROT_READ, syscall.MAP_PRIVATE|syscall.MAP_ANON)
+	data, err := syscall.Mmap(-1, 0, size, syscall.PROT_WRITE|syscall.PROT_READ, syscall.MAP_PRIVATE|syscall.MAP_ANONYMOUS)
 	if err != nil {
 		return nil, err
 	}
