@@ -1,17 +1,17 @@
 package redsync
 
 import (
-	"github.com/garyburd/redigo/redis"
-	"github.com/k81/kate/redismgr"
+	"github.com/go-redis/redis"
+	"github.com/k81/kate/rdb"
 )
 
 // Pool maintains a pool of Redis connections.
 type Pool interface {
-	GetConn() redis.Conn
+	Get() redis.Cmdable
 }
 
 type defaultPool struct{}
 
-func (p *defaultPool) GetConn() redis.Conn {
-	return redismgr.GetConn()
+func (p *defaultPool) Get() redis.Cmdable {
+	return rdb.Get()
 }

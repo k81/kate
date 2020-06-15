@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/k81/kate/utils"
 )
 
@@ -99,7 +99,7 @@ func (m *Mutex) Extend() bool {
 
 	n := 0
 	for _, pool := range m.pools {
-		ok := m.touch(pool, m.token, int(m.expiry/time.Millisecond))
+		ok := m.touch(pool, m.token, m.expiry)
 		if ok {
 			n++
 		}
@@ -132,14 +132,13 @@ func (m *Mutex) getDelay() time.Duration {
 }
 
 func (m *Mutex) acquire(pool Pool, token string) bool {
-	conn := pool.GetConn()
+	client := pool.Get()
 	// nolint:errcheck
-	defer conn.Close()
-	reply, err := redis.String(conn.Do("SET", m.name, token, "NX", "PX", int(m.expiry/time.Millisecond)))
-	return err == nil && reply == "OK"
+	ok, err := client.SetNX(m.name, token, m.expiry).Result()
+	return err == nil && ok
 }
 
-var deleteScript = redis.NewScript(1, `
+var deleteScript = redis.NewScript(`
 	if redis.call("GET", KEYS[1]) == ARGV[1] then
 		return redis.call("DEL", KEYS[1])
 	else
@@ -148,14 +147,13 @@ var deleteScript = redis.NewScript(1, `
 `)
 
 func (m *Mutex) release(pool Pool, token string) bool {
-	conn := pool.GetConn()
+	client := pool.Get()
 	// nolint:errcheck
-	defer conn.Close()
-	status, err := deleteScript.Do(conn, m.name, token)
-	return err == nil && status != 0
+	result, err := deleteScript.Run(client, []string{m.name}, token).Int()
+	return err == nil && result == 1
 }
 
-var touchScript = redis.NewScript(1, `
+var touchScript = redis.NewScript(`
 	if redis.call("GET", KEYS[1]) == ARGV[1] then
 		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
 	else
@@ -168,10 +166,9 @@ var touchScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) touch(pool Pool, token string, expiry int) bool {
-	conn := pool.GetConn()
+func (m *Mutex) touch(pool Pool, token string, expiry time.Duration) bool {
+	client := pool.Get()
 	// nolint:errcheck
-	defer conn.Close()
-	status, err := redis.Int(touchScript.Do(conn, m.name, token, expiry))
-	return err == nil && status == 1
+	result, err := touchScript.Run(client, []string{m.name}, token, int(expiry/time.Millisecond)).Int()
+	return err == nil && result == 1
 }
