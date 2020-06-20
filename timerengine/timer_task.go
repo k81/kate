@@ -6,10 +6,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// Task define the Task interface runned by timer engine
+type Task interface {
+	Run()
+}
+
 // TaskFunc define the task func type
 type TaskFunc func()
 
-// Run adapt the TaskFunc to Task interface
+// Run adapt the TaskFunc to taskengine.Task interface
 func (f TaskFunc) Run() {
 	f()
 }
@@ -18,72 +23,72 @@ func (f TaskFunc) Run() {
 type TimerTask struct {
 	sync.Mutex
 	ID        uint64
-	taskFunc  TaskFunc
+	task      Task
 	cycleNum  int
 	engine    *TimerEngine
 	started   bool
 	cancelled bool
 }
 
-func newTimerTask(engine *TimerEngine, cycleNum int, f TaskFunc) *TimerTask {
+func newTimerTask(engine *TimerEngine, cycleNum int, task Task) *TimerTask {
 	taskID := engine.nextTaskID()
 
-	task := &TimerTask{
+	timerTask := &TimerTask{
 		ID:       taskID,
-		taskFunc: f,
+		task:     task,
 		cycleNum: cycleNum,
 		engine:   engine,
 	}
-	return task
+	return timerTask
 }
 
 // Cancel cancel the task
-func (task *TimerTask) Cancel() (ok bool) {
-	task.Lock()
-	if !task.started {
-		task.cancelled = true
+func (timerTask *TimerTask) Cancel() (ok bool) {
+	timerTask.Lock()
+	if !timerTask.started {
+		timerTask.cancelled = true
 	}
-	ok = task.cancelled
-	task.Unlock()
+	ok = timerTask.cancelled
+	timerTask.Unlock()
 	return
 }
 
-func (task *TimerTask) ready() (ready bool) {
-	task.Lock()
+func (timerTask *TimerTask) ready() (ready bool) {
+	timerTask.Lock()
 
-	if task.cancelled {
+	if timerTask.cancelled {
 		ready = true
 	} else {
-		task.cycleNum--
+		timerTask.cycleNum--
 
-		if task.cycleNum <= 0 {
+		if timerTask.cycleNum <= 0 {
 			ready = true
 		}
 	}
-	task.Unlock()
+	timerTask.Unlock()
 	return
 }
 
-func (task *TimerTask) dispose() {
+func (timerTask *TimerTask) dispose() {
 	var ok bool
 
-	task.Lock()
-	if !task.cancelled {
-		task.started = true
+	timerTask.Lock()
+	if !timerTask.cancelled {
+		timerTask.started = true
 	}
-	ok = task.started
-	task.Unlock()
+	ok = timerTask.started
+	timerTask.Unlock()
 
 	if ok {
-		task.engine.execute(func() {
+		timerTask.engine.execute(func() {
 			defer func() {
 				if r := recover(); r != nil {
-					task.engine.logger.Error("got panic", zap.Any("error", r), zap.Stack("stack"))
+					timerTask.engine.logger.Error("got panic", zap.Any("error", r), zap.Stack("stack"))
 				}
 			}()
 
-			if task.taskFunc != nil {
-				task.taskFunc()
+			if timerTask.task != nil {
+				timerTask.task.Run()
 			}
 		})
 	}

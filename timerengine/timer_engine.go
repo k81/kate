@@ -17,9 +17,9 @@ const (
 )
 
 type request struct {
-	taskFunc TaskFunc
-	delay    int64
-	result   chan *TimerTask
+	task   Task
+	delay  int64
+	result chan *TimerTask
 }
 
 // TimerEngine define the timer engine
@@ -103,7 +103,7 @@ func (te *TimerEngine) loop() {
 					cycleNum    = offset / RingSize
 					bucketIndex = offset % RingSize
 					bucket      = te.buckets[bucketIndex]
-					task        = newTimerTask(te, cycleNum, req.taskFunc)
+					task        = newTimerTask(te, cycleNum, req.task)
 				)
 				bucket.PushBack(task)
 
@@ -156,17 +156,17 @@ func (te *TimerEngine) execute(f TaskFunc) {
 }
 
 // Schedule schedule a timer task with delay
-func (te *TimerEngine) Schedule(f TaskFunc, delay int64) (task *TimerTask) {
+func (te *TimerEngine) Schedule(task Task, delay int64) (timerTask *TimerTask) {
 	if delay <= 0 {
-		task = newTimerTask(te, 0, f)
-		task.dispose()
+		timerTask = newTimerTask(te, 0, task)
+		timerTask.dispose()
 		return
 	}
 
 	req := &request{
-		taskFunc: f,
-		delay:    delay,
-		result:   make(chan *TimerTask, 1),
+		task:   task,
+		delay:  delay,
+		result: make(chan *TimerTask, 1),
 	}
 
 	select {
@@ -177,7 +177,7 @@ func (te *TimerEngine) Schedule(f TaskFunc, delay int64) (task *TimerTask) {
 
 	select {
 	case <-te.ctx.Done():
-	case task = <-req.result:
+	case timerTask = <-req.result:
 	}
 	return
 }
