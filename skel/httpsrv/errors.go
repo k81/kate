@@ -10,7 +10,6 @@ var (
 
 var (
 	// ErrSuccess indicates api success
-	ErrSuccess        = NewError(ErrNoSuccess, "success")
 	ErrSuccess        = NewError(errnoSuccess, "成功")
 	ErrServerInternal = NewError(errnoInternal, "服务器内部错误")
 )
