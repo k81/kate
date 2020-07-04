@@ -4,17 +4,14 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
 	"time"
 
 	"github.com/cloudflare/tableflip"
 	"github.com/k81/kate/app"
-	"github.com/k81/kate/log"
 	"github.com/k81/kate/rdb"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"__PACKAGE_NAME__/config"
 	"__PACKAGE_NAME__/grpcsrv"
@@ -39,7 +36,7 @@ func startCmdFunc(_ *cobra.Command, _ []string) {
 		fmt.Fprintf(os.Stderr, "load config failed: file=%s, error=%v\n", GlobalFlags.ConfigFile, err)
 	}
 
-	logger := initLog()
+	logger := initLogger()
 	defer func() {
 		if err := logger.Sync(); err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "failed to flush log: %v", err)
@@ -91,28 +88,6 @@ func startCmdFunc(_ *cobra.Command, _ []string) {
 	logger.Info("server started")
 
 	waitForShutdown(upgrader, logger)
-}
-
-func initLog() *zap.Logger {
-	enc := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
-
-	core := zapcore.NewTee(
-		log.MustNewCore(zapcore.DebugLevel, path.Join(config.Main.LogDir, "debug.log"), enc),
-		log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, "info.log"), enc),
-		log.MustNewCore(zapcore.WarnLevel, path.Join(config.Main.LogDir, "warn.log"), enc),
-		log.MustNewCore(zapcore.ErrorLevel, path.Join(config.Main.LogDir, "error.log"), enc),
-		log.MustNewCore(zapcore.FatalLevel, path.Join(config.Main.LogDir, "fatal.log"), enc),
-	)
-
-	opts := []zap.Option{
-		zap.AddStacktrace(zap.ErrorLevel),
-		zap.AddCaller(),
-	}
-
-	logger := zap.New(core, opts...)
-	zap.ReplaceGlobals(logger)
-
-	return logger
 }
 
 func waitForShutdown(upgrader *tableflip.Upgrader, logger *zap.Logger) {
