@@ -47,7 +47,7 @@ func Stop() {
 	}
 }
 
-func (s *grpService) start() {
+func (s *grpcService) start() {
 	var (
 		enc  = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 		core = log.MustNewCore(zapcore.InfoLevel, path.Join(config.Main.LogDir, s.conf.LogFile), enc)
