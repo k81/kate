@@ -37,7 +37,6 @@ function doBuild() {
 rm -rf $PKG_HOME 2>/dev/null
 mkdir -p $PKG_HOME/{bin,conf,log,run}
 cp scripts/conf/$APP_ENV.ini $PKG_HOME/conf/$APP.ini
-cp scripts/conf/logger.json $PKG_HOME/conf/logger.json
 
 echo 'building started'
 doBuild
