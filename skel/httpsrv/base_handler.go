@@ -25,9 +25,6 @@ const (
 	MIMEApplicationJSONCharsetUTF8 = "application/json; charset=UTF-8"
 )
 
-// ErrServerInternal indicates the server internal error
-var ErrServerInternal = NewError(-1, "server internal error")
-
 // BaseHandler is the enhanced version of ngs.BaseController
 type BaseHandler struct{}
 
@@ -40,7 +37,7 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 	if r.ContentLength != 0 {
 		if err := h.parseBody(req, r); err != nil {
 			logger.Error("decode request", zap.Error(err))
-			return err
+			return ErrBadParam(err)
 		}
 	}
 
@@ -49,12 +46,14 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 	if len(queryValues) > 0 {
 		data := make(map[string]interface{})
 		for key := range queryValues {
-			data[key] = queryValues.Get(key)
+			if value := queryValues.Get(key); len(value) > 0 {
+				data[key] = value
+			}
 		}
 
 		if err := utils.Bind(req, "query", data); err != nil {
 			logger.Error("bind query var failed", zap.Error(err))
-			return err
+			return ErrBadParam(err)
 		}
 	}
 
@@ -67,7 +66,7 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 
 		if err := utils.Bind(req, "rest", data); err != nil {
 			logger.Error("bind rest var failed", zap.Error(err))
-			return err
+			return ErrBadParam(err)
 		}
 	}
 
@@ -79,7 +78,7 @@ func (h *BaseHandler) ParseRequest(ctx context.Context, r *kate.Request, req int
 	// validate
 	if err := govalidator.ValidateStruct(req); err != nil {
 		logger.Error("validate request", zap.Error(err))
-		return err
+		return ErrBadParam(err)
 	}
 	return nil
 }
