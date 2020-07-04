@@ -13,10 +13,9 @@ import (
 var logger *zap.Logger
 
 // Init initialize the model setting.
-func Init(l *zap.Logger) {
+func Init(logger *zap.Logger) {
 	conf := config.DB
 
-	logger = l
 	orm.Debug = true
 	orm.SetLogger(logger.With(zap.String("tag", "debug_sql")))
 	orm.RegisterDB("default", "mysql", conf.DataSource, conf.MaxIdleConns, conf.MaxOpenConns, conf.ConnMaxLifetime)
