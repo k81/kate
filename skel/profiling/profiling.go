@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// http://localhost:port/debug/pprof/
+
 var addr string
 var logger *zap.Logger
 
