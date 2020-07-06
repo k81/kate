@@ -26,6 +26,7 @@ type Client interface {
 // Config defines the redis config
 type Config struct {
 	Addrs              []string
+	Password           string
 	ClusterEnabled     bool
 	ReadOnly           bool
 	RouteMode          string
@@ -58,6 +59,7 @@ func Init(conf *Config) {
 func newClient(conf *Config) *redis.Client {
 	opt := &redis.Options{
 		Addr:               conf.Addrs[0],
+		Password:           conf.Password,
 		MaxRetries:         conf.MaxRetries,
 		MinRetryBackoff:    conf.MinRetryBackoff,
 		MaxRetryBackoff:    conf.MaxRetryBackoff,
@@ -78,6 +80,7 @@ func newClient(conf *Config) *redis.Client {
 func newClusterClient(conf *Config) *redis.ClusterClient {
 	opt := &redis.ClusterOptions{
 		Addrs:              conf.Addrs,
+		Password:           conf.Password,
 		MaxRedirects:       conf.MaxRedirects,
 		MaxRetries:         conf.MaxRetries,
 		MinRetryBackoff:    conf.MinRetryBackoff,
