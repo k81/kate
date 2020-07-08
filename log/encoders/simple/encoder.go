@@ -321,10 +321,10 @@ func (enc *encoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buf
 	final.buf.AppendInt(int64(pid))
 	final.buf.AppendString("][")
 	final.buf.AppendString(fmt.Sprintf("%05d", gls.GoID()))
-	final.buf.AppendString("]  ")
+	final.buf.AppendString("]\t")
 
 	final.buf.AppendString(ent.Message)
-	final.buf.AppendString("  ")
+	final.buf.AppendString("\t")
 
 	final.buf.AppendByte('{')
 	if enc.buf.Len() > 0 || len(fields) > 0 {
@@ -340,7 +340,7 @@ func (enc *encoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buf
 
 	final.buf.AppendByte('}')
 
-	final.buf.AppendString("  [")
+	final.buf.AppendString("\t[")
 	final.buf.AppendString(ent.Caller.TrimmedPath())
 	final.buf.AppendByte(']')
 	final.buf.AppendString(zapcore.DefaultLineEnding)
