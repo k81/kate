@@ -3,6 +3,7 @@ package simple
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"sync"
@@ -314,22 +315,18 @@ func (enc *encoder) clone() *encoder {
 func (enc *encoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	final := enc.clone()
 
-	final.buf.AppendByte('[')
-	final.buf.AppendString(ent.Level.CapitalString())
-	final.buf.AppendString("][")
+	final.buf.AppendString(fmt.Sprintf("%-6v ", ent.Level.CapitalString()))
 	final.buf.AppendString(ent.Time.Format("2006-01-02T15:04:05.000Z0700"))
-	final.buf.AppendString("][")
+	final.buf.AppendString(" [")
 	final.buf.AppendInt(int64(pid))
 	final.buf.AppendString("][")
-	final.buf.AppendInt(gls.GoID())
-	final.buf.AppendString("][")
-	final.buf.AppendString(ent.Caller.TrimmedPath())
-	final.buf.AppendByte(']')
+	final.buf.AppendString(fmt.Sprintf("%05d", gls.GoID()))
+	final.buf.AppendString("]  ")
+
+	final.buf.AppendString(ent.Message)
+	final.buf.AppendString("  ")
 
 	final.buf.AppendByte('{')
-	final.addKey("msg")
-	final.AppendString(ent.Message)
-
 	if enc.buf.Len() > 0 || len(fields) > 0 {
 		if enc.buf.Len() > 0 {
 			final.addElementSeparator()
@@ -342,6 +339,10 @@ func (enc *encoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buf
 	}
 
 	final.buf.AppendByte('}')
+
+	final.buf.AppendString("  [")
+	final.buf.AppendString(ent.Caller.TrimmedPath())
+	final.buf.AppendByte(']')
 	final.buf.AppendString(zapcore.DefaultLineEnding)
 
 	ret := final.buf
