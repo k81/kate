@@ -11,8 +11,8 @@ import (
 	"github.com/k81/kate/app"
 )
 
-// MustNewCore create an zapcore.Core instance, exit if error occurred
-func MustNewCore(level zapcore.Level, location string, enc zapcore.Encoder) zapcore.Core {
+// MustNewCoreWithLevelOnly create core only handle specified level
+func MustNewCoreWithLevelOnly(level zapcore.Level, location string, enc zapcore.Encoder) zapcore.Core {
 	if !path.IsAbs(location) {
 		location = path.Join(app.GetHomeDir(), "log", location)
 	}
@@ -29,4 +29,20 @@ func MustNewCore(level zapcore.Level, location string, enc zapcore.Encoder) zapc
 	})
 
 	return zapcore.NewCore(enc, writer, levelEnabler)
+}
+
+// MustNewCoreWithLevelAbove create core handle level >= specified level
+func MustNewCoreWithLevelAbove(level zapcore.Level, location string, enc zapcore.Encoder) zapcore.Core {
+	if !path.IsAbs(location) {
+		location = path.Join(app.GetHomeDir(), "log", location)
+	}
+
+	os.MkdirAll(path.Dir(location), 0755)
+
+	writer, err := NewWriter(location)
+	if err != nil {
+		panic(fmt.Errorf("failed to create file sink: %v, %v", location, err))
+	}
+
+	return zapcore.NewCore(enc, writer, level)
 }
